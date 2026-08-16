@@ -1,0 +1,17 @@
+body {
+    background: red !important;
+}
+
+.topbar {
+    background: yellow !important;
+}
+
+.hero {
+    background: blue !important;
+    color: white !important;
+}
+
+.start-btn {
+    background: green !important;
+    color: white !important;
+}
