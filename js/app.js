@@ -1,745 +1,1869 @@
-const CATEGORIES = [
-  {
-    id: "histoire",
-    name: "Histoire d'Haïti",
-    questions: [
-      {
-        question: "En quelle année Haïti est-elle devenue indépendante ?",
-        choices: ["1791", "1804", "1815", "1822"],
-        answerIndex: 1
-      },
-      {
-        question: "Qui a été le premier chef d'État d'Haïti après l'indépendance ?",
-        choices: [
-          "Toussaint Louverture",
-          "Henri Christophe",
-          "Jean-Jacques Dessalines",
-          "Alexandre Pétion"
-        ],
-        answerIndex: 2
-      },
-      {
-        question: "Quelle bataille marque une étape importante de la lutte pour l'indépendance en 1803 ?",
-        choices: [
-          "Bataille de Vertières",
-          "Bataille de Crête-à-Pierrot",
-          "Bataille de Santo Domingo",
-          "Bataille de Léogâne"
-        ],
-        answerIndex: 0
-      }
-    ]
-  },
+/* =====================================================
+   KONKOU — APP.JS
+   Connexion au serveur Render
+===================================================== */
 
-  {
-    id: "geographie",
-    name: "Géographie",
-    questions: [
-      {
-        question: "Quelle est la capitale d'Haïti ?",
-        choices: [
-          "Cap-Haïtien",
-          "Jacmel",
-          "Port-au-Prince",
-          "Gonaïves"
-        ],
-        answerIndex: 2
-      },
-      {
-        question: "Avec quel pays Haïti partage-t-elle l'île d'Hispaniola ?",
-        choices: [
-          "Cuba",
-          "Jamaïque",
-          "République Dominicaine",
-          "Porto Rico"
-        ],
-        answerIndex: 2
-      }
-    ]
-  },
+const API_URL = "https://konkou-server-6.onrender.com";
 
-  {
-    id: "sport",
-    name: "Sport",
-    questions: [
-      {
-        question: "Quel sport est le plus populaire en Haïti ?",
-        choices: [
-          "Basketball",
-          "Football",
-          "Baseball",
-          "Boxe"
-        ],
-        answerIndex: 1
-      }
-    ]
-  }
-];
 
-const PAID_CONTEST = {
-  id: "concours-semaine",
-  name: "🏆 Concours de la semaine",
-  entryFee: 50,
-  questions: [
-    {
-      question: "En quelle année Haïti est-elle devenue indépendante ?",
-      choices: ["1791", "1804", "1815", "1822"],
-      answerIndex: 1
-    },
-    {
-      question: "Quelle est la capitale d'Haïti ?",
-      choices: [
-        "Cap-Haïtien",
-        "Jacmel",
-        "Port-au-Prince",
-        "Gonaïves"
-      ],
-      answerIndex: 2
-    },
-    {
-      question: "Quel sport est le plus populaire en Haïti ?",
-      choices: [
-        "Basketball",
-        "Football",
-        "Baseball",
-        "Boxe"
-      ],
-      answerIndex: 1
-    }
-  ]
-};
-
-const TIME_PER_QUESTION = 15;
-const FREE_TICKETS_PER_DAY = 3;
+/* =====================================================
+   ÉTAT DU JEU
+===================================================== */
 
 const state = {
-  currentCategory: null,
-  currentQuestions: [],
-  currentIndex: 0,
-  score: 0,
-  correctAnswers: 0,
-  timer: null,
-  timeLeft: TIME_PER_QUESTION,
-  tickets: 3,
-  answered: false,
-  currentPlayerPhone: null
+
+    category: null,
+
+    questions: [],
+
+    index: 0,
+
+    score: 0,
+
+    correct: 0,
+
+    wrong: 0,
+
+    timer: null,
+
+    time: 15,
+
+    tickets: 3
+
 };
 
-const screens = {
-  home: document.getElementById("screen-home"),
-  payment: document.getElementById("screen-payment"),
-  quiz: document.getElementById("screen-quiz"),
-  result: document.getElementById("screen-result")
-};
+const RESET = 4 * 60 * 60 * 1000;
 
-const el = {
-  ticketCount: document.getElementById("ticket-count"),
-  ticketCountHome: document.getElementById("ticket-count-home"),
-  categoryList: document.getElementById("category-list"),
-
-  quizCategory: document.getElementById("quiz-category"),
-  quizQuestion: document.getElementById("quiz-question"),
-  quizChoices: document.getElementById("quiz-choices"),
-  quizScore: document.getElementById("quiz-score"),
-  quizProgress: document.getElementById("quiz-progress"),
-  progressFill: document.getElementById("progress-fill"),
-  timer: document.getElementById("timer"),
-
-  resultScore: document.getElementById("result-score"),
-  resultTotal: document.getElementById("result-total"),
-  resultMessage: document.getElementById("result-message"),
-  resultBadge: document.getElementById("result-badge"),
-  contestStandings: document.getElementById("contest-standings"),
-
-  paymentFee: document.getElementById("payment-fee"),
-  paymentPlayers: document.getElementById("payment-players"),
-  paymentPot: document.getElementById("payment-pot"),
-  paymentPhone: document.getElementById("payment-phone"),
-  paymentStatus: document.getElementById("payment-status"),
-
-  btnPay: document.getElementById("btn-pay"),
-  btnPaymentCancel: document.getElementById("btn-payment-cancel"),
-  btnQuit: document.getElementById("btn-quit"),
-  btnReplay: document.getElementById("btn-replay"),
-  btnHome: document.getElementById("btn-home")
-};
+const QUESTION_TIME = 15;
 
 
-/* =========================
-   NAVIGATION
-========================= */
+/* =====================================================
+   CATEGORIES
+===================================================== */
 
-function showScreen(name) {
-  Object.values(screens).forEach(screen => {
-    if (screen) {
-      screen.classList.remove("active");
+const categories = [
+
+    {
+        name: "📚 Histoire d'Haïti",
+
+        questions: [
+
+            {
+                q: "En quelle année Haïti est-elle devenue indépendante ?",
+
+                c: [
+                    "1791",
+                    "1804",
+                    "1815",
+                    "1822"
+                ],
+
+                a: 1
+            },
+
+            {
+                q: "Qui a proclamé l'indépendance d'Haïti ?",
+
+                c: [
+                    "Toussaint Louverture",
+                    "Jean-Jacques Dessalines",
+                    "Alexandre Pétion",
+                    "Henri Christophe"
+                ],
+
+                a: 1
+            },
+
+            {
+                q: "Quelle bataille est associée à la victoire décisive de l'armée indigène ?",
+
+                c: [
+                    "Vertières",
+                    "Jacmel",
+                    "Léogâne",
+                    "Port-au-Prince"
+                ],
+
+                a: 0
+            }
+
+        ]
+    },
+
+    {
+        name: "🌎 Géographie",
+
+        questions: [
+
+            {
+                q: "Quelle est la capitale d'Haïti ?",
+
+                c: [
+                    "Cap-Haïtien",
+                    "Jacmel",
+                    "Port-au-Prince",
+                    "Gonaïves"
+                ],
+
+                a: 2
+            },
+
+            {
+                q: "Avec quel pays Haïti partage-t-elle Hispaniola ?",
+
+                c: [
+                    "Cuba",
+                    "Jamaïque",
+                    "République Dominicaine",
+                    "Porto Rico"
+                ],
+
+                a: 2
+            }
+
+        ]
+    },
+
+    {
+        name: "⚽ Sport",
+
+        questions: [
+
+            {
+                q: "Combien de joueurs une équipe de football possède-t-elle normalement sur le terrain ?",
+
+                c: [
+                    "7",
+                    "9",
+                    "11",
+                    "13"
+                ],
+
+                a: 2
+            }
+
+        ]
+    },
+
+    {
+        name: "💻 Informatique",
+
+        questions: [
+
+            {
+                q: "Que signifie HTML ?",
+
+                c: [
+                    "HyperText Markup Language",
+                    "HighText Machine Language",
+                    "HyperTool Modern Language",
+                    "Home Tool Markup Language"
+                ],
+
+                a: 0
+            },
+
+            {
+                q: "Quel langage rend principalement une page web interactive ?",
+
+                c: [
+                    "JavaScript",
+                    "HTML",
+                    "SQL",
+                    "XML"
+                ],
+
+                a: 0
+            }
+
+        ]
     }
-  });
 
-  if (screens[name]) {
-    screens[name].classList.add("active");
-  }
-}
+];
 
 
-/* =========================
-   CATÉGORIES
-========================= */
+/* =====================================================
+   ÉCRANS
+===================================================== */
 
-function renderCategories() {
-  el.categoryList.innerHTML = "";
+const screens = [
+    "home",
+    "quiz",
+    "result",
+    "ranking",
+    "how-to",
+    "gains",
+    "history"
+];
 
-  const paidButton = document.createElement("button");
 
-  paidButton.className = "paid-contest-btn";
+function screen(name) {
 
-  paidButton.innerHTML = `
-    <span>${PAID_CONTEST.name}</span>
-    <span class="cat-count">
-      Entrée : ${PAID_CONTEST.entryFee} HTG
-    </span>
-  `;
+    screens.forEach(x => {
 
-  paidButton.addEventListener("click", openPaymentScreen);
+        const element = document.getElementById(
+            "screen-" + x
+        );
 
-  el.categoryList.appendChild(paidButton);
+        if (element) {
+            element.classList.remove("active");
+        }
 
-  CATEGORIES.forEach(category => {
-    const button = document.createElement("button");
-
-    button.innerHTML = `
-      <span>${category.name}</span>
-      <span class="cat-count">
-        ${category.questions.length} questions
-      </span>
-    `;
-
-    button.addEventListener("click", () => {
-      startQuiz(category);
     });
 
-    el.categoryList.appendChild(button);
-  });
+    const selected = document.getElementById(
+        "screen-" + name
+    );
+
+    if (selected) {
+        selected.classList.add("active");
+    }
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+
 }
 
 
-/* =========================
+/* =====================================================
    TICKETS
-========================= */
+===================================================== */
 
-function getToday() {
-  const date = new Date();
+function loadTickets() {
 
-  return (
-    date.getFullYear() +
-    "-" +
-    String(date.getMonth() + 1).padStart(2, "0") +
-    "-" +
-    String(date.getDate()).padStart(2, "0")
-  );
+    const data = JSON.parse(
+        localStorage.getItem("tickets") || "null"
+    );
+
+    if (!data) {
+
+        state.tickets = 3;
+
+        localStorage.setItem(
+            "tickets",
+            JSON.stringify({
+                count: 3,
+                time: Date.now()
+            })
+        );
+
+    }
+
+    else if (
+        Date.now() - data.time >= RESET
+    ) {
+
+        state.tickets = 3;
+
+        localStorage.setItem(
+            "tickets",
+            JSON.stringify({
+                count: 3,
+                time: Date.now()
+            })
+        );
+
+    }
+
+    else {
+
+        state.tickets = data.count;
+
+    }
+
+    updateTickets();
+
 }
+
 
 function updateTickets() {
-  const today = getToday();
 
-  let saved = null;
-
-  try {
-    saved = JSON.parse(
-      localStorage.getItem("konkou_tickets")
+    const ticket = document.getElementById(
+        "ticket-count"
     );
-  } catch {
-    saved = null;
-  }
 
-  if (saved && saved.date === today) {
-    state.tickets = saved.count;
-  } else {
-    state.tickets = FREE_TICKETS_PER_DAY;
-    saveTickets();
-  }
+    const homeTicket = document.getElementById(
+        "ticket-count-home"
+    );
 
-  refreshTicketDisplay();
+    const profileTicket = document.getElementById(
+        "profile-tickets"
+    );
+
+    if (ticket) {
+        ticket.textContent = state.tickets;
+    }
+
+    if (homeTicket) {
+        homeTicket.textContent = state.tickets;
+    }
+
+    if (profileTicket) {
+        profileTicket.textContent = state.tickets;
+    }
+
 }
 
-function saveTickets() {
-  localStorage.setItem(
-    "konkou_tickets",
-    JSON.stringify({
-      date: getToday(),
-      count: state.tickets
-    })
-  );
 
-  refreshTicketDisplay();
+function ticketTimer() {
+
+    const data = JSON.parse(
+        localStorage.getItem("tickets") || "null"
+    );
+
+    const element = document.getElementById(
+        "ticket-countdown-home"
+    );
+
+    if (!element) {
+        return;
+    }
+
+    if (!data) {
+
+        element.textContent =
+            "3 tickets disponibles";
+
+        return;
+    }
+
+    if (state.tickets >= 3) {
+
+        element.textContent =
+            "3 tickets disponibles";
+
+        return;
+    }
+
+    const remaining = Math.max(
+        0,
+        data.time + RESET - Date.now()
+    );
+
+    if (remaining <= 0) {
+
+        loadTickets();
+
+        return;
+    }
+
+    const h = Math.floor(
+        remaining / 3600000
+    );
+
+    const m = Math.floor(
+        remaining % 3600000 / 60000
+    );
+
+    const s = Math.floor(
+        remaining % 60000 / 1000
+    );
+
+    element.textContent =
+        `⏱️ Recharge dans ${h}h ${String(m).padStart(2, "0")}min ${String(s).padStart(2, "0")}s`;
+
 }
 
-function refreshTicketDisplay() {
-  el.ticketCount.textContent = state.tickets;
-  el.ticketCountHome.textContent = state.tickets;
-}
 
 function useTicket() {
-  if (state.tickets <= 0) {
-    return false;
-  }
 
-  state.tickets--;
+    if (state.tickets <= 0) {
 
-  saveTickets();
+        alert(
+            "Tu n'as plus de tickets. Ils seront renouvelés après 4 heures."
+        );
 
-  return true;
-}
-
-
-/* =========================
-   CONCOURS
-========================= */
-
-function getContestEntries() {
-  try {
-    return (
-      JSON.parse(
-        localStorage.getItem(
-          "konkou_contest_entries"
-        )
-      ) || []
-    );
-  } catch {
-    return [];
-  }
-}
-
-function saveContestEntries(entries) {
-  localStorage.setItem(
-    "konkou_contest_entries",
-    JSON.stringify(entries)
-  );
-}
-
-function addPlayerToPot(phone) {
-  const entries = getContestEntries();
-
-  entries.push({
-    phone: phone,
-    score: null,
-    joinedAt: Date.now()
-  });
-
-  saveContestEntries(entries);
-}
-
-
-/* =========================
-   PAIEMENT SIMULÉ
-========================= */
-
-function refreshPaymentSummary() {
-  const entries = getContestEntries();
-
-  const total =
-    entries.length *
-    PAID_CONTEST.entryFee;
-
-  el.paymentFee.textContent =
-    `${PAID_CONTEST.entryFee} HTG`;
-
-  el.paymentPlayers.textContent =
-    entries.length;
-
-  el.paymentPot.textContent =
-    `${total} HTG`;
-}
-
-function openPaymentScreen() {
-  el.paymentPhone.value = "";
-
-  el.paymentStatus.textContent = "";
-
-  el.paymentStatus.className =
-    "payment-status";
-
-  el.btnPay.disabled = false;
-
-  el.btnPay.textContent =
-    "Payer et rejoindre";
-
-  refreshPaymentSummary();
-
-  showScreen("payment");
-}
-
-el.btnPaymentCancel.addEventListener(
-  "click",
-  () => {
-    showScreen("home");
-  }
-);
-
-el.btnPay.addEventListener(
-  "click",
-  () => {
-    const phone =
-      el.paymentPhone.value
-        .replace(/\s+/g, "")
-        .trim();
-
-    if (!/^\d{8}$/.test(phone)) {
-      el.paymentStatus.textContent =
-        "Entre un numéro MonCash valide à 8 chiffres.";
-
-      el.paymentStatus.className =
-        "payment-status error";
-
-      return;
+        return false;
     }
 
-    el.btnPay.disabled = true;
-
-    el.btnPay.textContent =
-      "Paiement en cours...";
-
-    el.paymentStatus.textContent =
-      "Vérification du paiement...";
-
-    setTimeout(() => {
-      state.currentPlayerPhone = phone;
-
-      addPlayerToPot(phone);
-
-      el.paymentStatus.textContent =
-        "Paiement confirmé (simulation). Bonne chance !";
-
-      el.paymentStatus.className =
-        "payment-status success";
-
-      setTimeout(() => {
-        startQuiz(PAID_CONTEST);
-      }, 800);
-
-    }, 1200);
-  }
-);
-
-
-/* =========================
-   QUIZ
-========================= */
-
-function startQuiz(category) {
-  const isPaid =
-    category.id === PAID_CONTEST.id;
-
-  if (!isPaid && !useTicket()) {
-    alert(
-      "Tu n'as plus de tickets aujourd'hui. Reviens demain !"
+    const data = JSON.parse(
+        localStorage.getItem("tickets")
     );
 
-    return;
-  }
+    state.tickets--;
 
-  state.currentCategory = category;
+    localStorage.setItem(
+        "tickets",
+        JSON.stringify({
+            count: state.tickets,
+            time: data ? data.time : Date.now()
+        })
+    );
 
-  state.currentQuestions =
-    shuffle([...category.questions]);
+    updateTickets();
 
-  state.currentIndex = 0;
+    return true;
 
-  state.score = 0;
-
-  state.correctAnswers = 0;
-
-  state.answered = false;
-
-  showScreen("quiz");
-
-  showQuestion();
 }
 
 
-/* =========================
-   MÉLANGE
-========================= */
+/* =====================================================
+   CATÉGORIES
+===================================================== */
 
-function shuffle(array) {
-  for (
-    let i = array.length - 1;
-    i > 0;
-    i--
-  ) {
-    const j =
-      Math.floor(
-        Math.random() * (i + 1)
-      );
+function renderCategories() {
 
-    [
-      array[i],
-      array[j]
-    ] = [
-      array[j],
-      array[i]
+    const box = document.getElementById(
+        "category-list"
+    );
+
+    if (!box) {
+        return;
+    }
+
+    box.innerHTML = "";
+
+    categories.forEach(
+        (category, i) => {
+
+            const button =
+                document.createElement("button");
+
+            button.innerHTML = `
+
+                <span>
+                    ${category.name}
+                </span>
+
+                <span class="cat-count">
+                    ${category.questions.length} questions
+                </span>
+
+            `;
+
+            button.onclick = () => {
+                startQuiz(i);
+            };
+
+            box.appendChild(button);
+
+        }
+    );
+
+    const ranking =
+        document.createElement("button");
+
+    ranking.innerHTML = `
+
+        <span>
+            🏆 Classement
+        </span>
+
+        <span class="cat-count">
+            Voir les scores
+        </span>
+
+    `;
+
+    ranking.onclick = showRanking;
+
+    box.appendChild(ranking);
+
+}
+
+
+/* =====================================================
+   DÉMARRER LE QUIZ
+===================================================== */
+
+function startQuiz(i) {
+
+    if (!useTicket()) {
+        return;
+    }
+
+    state.category = i;
+
+    state.questions = [
+        ...categories[i].questions
     ];
-  }
 
-  return array;
+    state.questions.sort(
+        () => Math.random() - 0.5
+    );
+
+    state.index = 0;
+
+    state.score = 0;
+
+    state.correct = 0;
+
+    state.wrong = 0;
+
+    screen("quiz");
+
+    question();
+
 }
 
 
-/* =========================
+/* =====================================================
    QUESTION
-========================= */
+===================================================== */
 
-function showQuestion() {
-  state.answered = false;
+function question() {
 
-  const question =
-    state.currentQuestions[
-      state.currentIndex
-    ];
+    clearInterval(state.timer);
 
-  el.quizCategory.textContent =
-    state.currentCategory.name;
+    const q =
+        state.questions[state.index];
 
-  el.quizQuestion.textContent =
-    question.question;
+    document.getElementById(
+        "quiz-category"
+    ).textContent =
+        categories[state.category].name;
 
-  el.quizScore.textContent =
-    state.score;
+    document.getElementById(
+        "quiz-question"
+    ).textContent =
+        q.q;
 
-  el.quizProgress.textContent =
-    `Question ${
-      state.currentIndex + 1
-    } sur ${
-      state.currentQuestions.length
-    }`;
+    document.getElementById(
+        "quiz-progress"
+    ).textContent =
+        `Question ${state.index + 1} sur ${state.questions.length}`;
 
-  const progress =
-    (
-      state.currentIndex /
-      state.currentQuestions.length
-    ) * 100;
+    document.getElementById(
+        "quiz-score"
+    ).textContent =
+        state.score;
 
-  el.progressFill.style.width =
-    progress + "%";
+    document.getElementById(
+        "progress-fill"
+    ).style.width =
+        (state.index / state.questions.length * 100) + "%";
 
-  el.quizChoices.innerHTML = "";
 
-  const choices =
-    question.choices.map(
-      (text, index) => ({
-        text: text,
-        isCorrect:
-          index === question.answerIndex
-      })
-    );
-
-  shuffle(choices);
-
-  choices.forEach(choice => {
-    const button =
-      document.createElement("button");
-
-    button.type = "button";
-
-    button.textContent =
-      choice.text;
-
-    button.addEventListener(
-      "click",
-      () => {
-        selectAnswer(
-          button,
-          choice.isCorrect
+    const answers =
+        q.c.map(
+            (text, index) => ({
+                text: text,
+                correct: index === q.a
+            })
         );
-      }
+
+
+    answers.sort(
+        () => Math.random() - 0.5
     );
 
-    el.quizChoices.appendChild(button);
-  });
 
-  startTimer();
+    const box =
+        document.getElementById(
+            "quiz-choices"
+        );
+
+    box.innerHTML = "";
+
+
+    answers.forEach(
+        answer => {
+
+            const button =
+                document.createElement("button");
+
+            button.textContent =
+                answer.text;
+
+            button.onclick = () => {
+
+                answerQuestion(
+                    button,
+                    answer.correct
+                );
+
+            };
+
+            box.appendChild(button);
+
+        }
+    );
+
+
+    startTimer();
+
 }
 
 
-/* =========================
-   TIMER
-========================= */
+/* =====================================================
+   CHRONOMÈTRE
+===================================================== */
 
 function startTimer() {
-  clearInterval(state.timer);
 
-  state.timeLeft =
-    TIME_PER_QUESTION;
+    state.time =
+        QUESTION_TIME;
 
-  el.timer.textContent =
-    state.timeLeft;
+    const timer =
+        document.getElementById("timer");
 
-  el.timer.classList.remove("low");
+    timer.textContent =
+        state.time;
 
-  state.timer = setInterval(() => {
-    state.timeLeft--;
+    timer.classList.remove("low");
 
-    el.timer.textContent =
-      state.timeLeft;
+    state.timer =
+        setInterval(
+            () => {
 
-    if (state.timeLeft <= 5) {
-      el.timer.classList.add("low");
-    }
+                state.time--;
 
-    if (state.timeLeft <= 0) {
-      clearInterval(state.timer);
+                timer.textContent =
+                    state.time;
 
-      if (!state.answered) {
-        selectAnswer(null, false);
-      }
-    }
-  }, 1000);
+                if (state.time <= 5) {
+                    timer.classList.add("low");
+                }
+
+                if (state.time <= 0) {
+
+                    clearInterval(
+                        state.timer
+                    );
+
+                    answerQuestion(
+                        null,
+                        false
+                    );
+
+                }
+
+            },
+            1000
+        );
+
 }
 
 
-/* =========================
+/* =====================================================
    RÉPONSE
-========================= */
+===================================================== */
 
-function selectAnswer(
-  button,
-  isCorrect
+function answerQuestion(
+    button,
+    correct
 ) {
-  if (state.answered) {
-    return;
-  }
-
-  state.answered = true;
-
-  clearInterval(state.timer);
-
-  const buttons =
-    el.quizChoices.querySelectorAll(
-      "button"
-    );
-
-  buttons.forEach(currentButton => {
-    currentButton.disabled = true;
-
-    if (currentButton === button) {
-      currentButton.classList.add(
-        isCorrect
-          ? "correct"
-          : "wrong"
-      );
-    }
-  });
-
-  if (isCorrect) {
-    state.score += 10;
-    state.correctAnswers++;
-  }
-
-  setTimeout(() => {
-    state.currentIndex++;
 
     if (
-      state.currentIndex <
-      state.currentQuestions.length
+        document.querySelector(
+            "#quiz-choices button:disabled"
+        )
     ) {
-      showQuestion();
-    } else {
-      finishQuiz();
+        return;
     }
-  }, 700);
+
+    clearInterval(
+        state.timer
+    );
+
+    document.querySelectorAll(
+        "#quiz-choices button"
+    ).forEach(
+        b => {
+            b.disabled = true;
+        }
+    );
+
+
+    if (button) {
+
+        button.classList.add(
+            correct
+                ? "correct"
+                : "wrong"
+        );
+
+    }
+
+
+    if (correct) {
+
+        state.correct++;
+
+        state.score += 10;
+
+    }
+
+    else {
+
+        state.wrong++;
+
+    }
+
+
+    document.getElementById(
+        "quiz-score"
+    ).textContent =
+        state.score;
+
+
+    setTimeout(
+        () => {
+
+            state.index++;
+
+            if (
+                state.index <
+                state.questions.length
+            ) {
+
+                question();
+
+            }
+
+            else {
+
+                finish();
+
+            }
+
+        },
+        700
+    );
+
 }
 
 
-/* =========================
-   FIN
-========================= */
+/* =====================================================
+   FIN DU QUIZ
+===================================================== */
 
-function finishQuiz() {
-  clearInterval(state.timer);
+async function finish() {
 
-  const total =
-    state.currentQuestions.length * 10;
+    const total =
+        state.questions.length * 10;
 
-  el.resultScore.textContent =
-    state.score;
+    document.getElementById(
+        "result-score"
+    ).textContent =
+        state.score;
 
-  el.resultTotal.textContent =
-    total;
+    document.getElementById(
+        "result-total"
+    ).textContent =
+        total;
 
-  const ratio =
-    state.score / total;
+    document.getElementById(
+        "result-correct"
+    ).textContent =
+        state.correct;
 
-  if (ratio === 1) {
-    el.resultMessage.textContent =
-      "🎉 Parfait ! Tu as répondu juste à toutes les questions !";
-  } else if (ratio >= 0.7) {
-    el.resultMessage.textContent =
-      "👏 Très bien ! Tu maîtrises bien cette catégorie.";
-  } else if (ratio >= 0.5) {
-    el.resultMessage.textContent =
-      "👍 Bien joué ! Tu peux encore progresser.";
-  } else {
-    el.resultMessage.textContent =
-      "💪 Continue à t'entraîner pour améliorer ton score !";
-  }
+    document.getElementById(
+        "result-wrong"
+    ).textContent =
+        state.wrong;
 
-  el.resultBadge.style.display =
-    ratio >= 0.7
-      ? "inline-block"
-      : "none";
 
-  el.resultBadge.textContent =
-    ratio === 1
-      ? "🏆 Score parfait !"
-      : "👍 Bien joué !";
+    const ratio =
+        total > 0
+            ? state.score / total
+            : 0;
 
-  el.contestStandings.style.display =
-    "none";
 
-  showScreen("result");
+    document.getElementById(
+        "result-message"
+    ).textContent =
+
+        ratio === 1
+            ? "🏆 Excellent ! Score parfait."
+            : ratio >= 0.7
+                ? "👏 Très bon résultat."
+                : ratio >= 0.5
+                    ? "👍 Bon travail."
+                    : "💪 Continue à t'entraîner.";
+
+
+    await saveScore();
+
+    screen("result");
+
 }
 
 
-/* =========================
-   BOUTONS
-========================= */
+/* =====================================================
+   SERVEUR — ENVOYER LE SCORE
+===================================================== */
 
-el.btnQuit.addEventListener(
-  "click",
-  () => {
-    clearInterval(state.timer);
-    showScreen("home");
-  }
-);
+async function sendScoreToServer(
+    name,
+    score
+) {
 
-el.btnReplay.addEventListener(
-  "click",
-  () => {
-    if (state.currentCategory) {
-      startQuiz(state.currentCategory);
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/players`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        name: name,
+                        score: score
+                    })
+                }
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                `Erreur HTTP ${response.status}`
+            );
+
+        }
+
+
+        const data =
+            await response.json();
+
+        console.log(
+            "✅ Score envoyé au serveur :",
+            data
+        );
+
+        return data;
+
     }
-  }
-);
 
-el.btnHome.addEventListener(
-  "click",
-  () => {
-    clearInterval(state.timer);
-    showScreen("home");
-  }
-);
+    catch (error) {
+
+        console.error(
+            "❌ Impossible d'envoyer le score :",
+            error
+        );
+
+        return null;
+
+    }
+
+}
 
 
-/* =========================
-   DÉMARRAGE
-========================= */
+/* =====================================================
+   SAUVEGARDER LE SCORE
+===================================================== */
+
+async function saveScore() {
+
+    const name =
+        localStorage.getItem(
+            "name"
+        ) || "Joueur";
+
+
+    const scores =
+        getScores();
+
+
+    scores.push({
+
+        name: name,
+
+        score: state.score,
+
+        category:
+            categories[state.category].name,
+
+        correct:
+            state.correct,
+
+        wrong:
+            state.wrong,
+
+        date:
+            new Date().toLocaleString()
+
+    });
+
+
+    localStorage.setItem(
+        "scores",
+        JSON.stringify(scores)
+    );
+
+
+    /*
+       Envoi vers Render
+    */
+
+    await sendScoreToServer(
+        name,
+        state.score
+    );
+
+
+    updateProfile();
+
+}
+
+
+/* =====================================================
+   SCORES LOCAUX
+===================================================== */
+
+function getScores() {
+
+    return JSON.parse(
+        localStorage.getItem(
+            "scores"
+        ) || "[]"
+    );
+
+}
+
+
+/* =====================================================
+   RÉCUPÉRER LE CLASSEMENT DU SERVEUR
+===================================================== */
+
+async function getServerRanking() {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/ranking`
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                `Erreur HTTP ${response.status}`
+            );
+
+        }
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "🏆 Classement serveur :",
+            data
+        );
+
+
+        return data.ranking || [];
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "❌ Erreur classement serveur :",
+            error
+        );
+
+        return [];
+
+    }
+
+}
+
+
+/* =====================================================
+   CLASSEMENT
+===================================================== */
+
+async function showRanking() {
+
+    const list =
+        document.getElementById(
+            "ranking-list"
+        );
+
+    const podium =
+        document.getElementById(
+            "podium"
+        );
+
+    const myBox =
+        document.getElementById(
+            "my-ranking"
+        );
+
+
+    if (list) {
+        list.innerHTML =
+            "<p class='muted'>Chargement du classement...</p>";
+    }
+
+
+    screen("ranking");
+
+
+    const players =
+        await getServerRanking();
+
+
+    const name =
+        localStorage.getItem(
+            "name"
+        ) || "Joueur";
+
+
+    /*
+       Mon classement
+    */
+
+    const myIndex =
+        players.findIndex(
+            player =>
+                player.name === name
+        );
+
+
+    if (myIndex >= 0) {
+
+        const me =
+            players[myIndex];
+
+
+        myBox.innerHTML = `
+
+            <div class="my-ranking-title">
+                TON CLASSEMENT
+            </div>
+
+            <div class="my-ranking-main">
+
+                <div>
+
+                    <strong>
+                        #${myIndex + 1}
+                    </strong>
+
+                    <div>
+                        ${escapeHtml(me.name)}
+                    </div>
+
+                </div>
+
+                <div>
+
+                    <strong>
+                        ${me.score}
+                    </strong>
+
+                    <div>
+                        points
+                    </div>
+
+                </div>
+
+            </div>
+
+        `;
+
+    }
+
+    else {
+
+        myBox.innerHTML = `
+
+            <div class="my-ranking-title">
+                TON CLASSEMENT
+            </div>
+
+            <p class="muted">
+                Joue une partie pour apparaître dans le classement.
+            </p>
+
+        `;
+
+    }
+
+
+    /*
+       Podium
+    */
+
+    podium.innerHTML = "";
+
+
+    const order = [
+        1,
+        0,
+        2
+    ];
+
+
+    order.forEach(
+        position => {
+
+            const player =
+                players[position];
+
+            if (!player) {
+                return;
+            }
+
+
+            const div =
+                document.createElement(
+                    "div"
+                );
+
+
+            div.className =
+                "podium-player " +
+                (
+                    position === 0
+                        ? "first"
+                        : position === 1
+                            ? "second"
+                            : "third"
+                );
+
+
+            const medal =
+                position === 0
+                    ? "🥇"
+                    : position === 1
+                        ? "🥈"
+                        : "🥉";
+
+
+            div.innerHTML = `
+
+                <div class="podium-avatar">
+                    ${medal}
+                </div>
+
+                <div class="podium-name">
+                    ${escapeHtml(player.name)}
+                </div>
+
+                <div class="podium-score">
+                    ${player.score} points
+                </div>
+
+                <div class="podium-rank">
+                    #${position + 1}
+                </div>
+
+            `;
+
+
+            podium.appendChild(div);
+
+        }
+    );
+
+
+    /*
+       Liste générale
+    */
+
+    list.innerHTML = "";
+
+
+    if (!players.length) {
+
+        list.innerHTML =
+            "<p class='muted'>Aucun joueur classé.</p>";
+
+    }
+
+    else {
+
+        players
+            .slice(0, 20)
+            .forEach(
+                (player, index) => {
+
+                    const row =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    row.className =
+                        "ranking-row " +
+                        (
+                            player.name === name
+                                ? "me"
+                                : ""
+                        );
+
+
+                    row.innerHTML = `
+
+                        <span>
+                            #${index + 1}
+                        </span>
+
+                        <span class="ranking-name">
+                            ${escapeHtml(player.name)}
+                        </span>
+
+                        <span>
+                            ${player.games} 🎮
+                        </span>
+
+                        <span class="ranking-score">
+                            ${player.score} pts
+                        </span>
+
+                    `;
+
+
+                    list.appendChild(row);
+
+                }
+            );
+
+    }
+
+
+    updateProfile();
+
+}
+
+
+/* =====================================================
+   SÉCURITÉ HTML
+===================================================== */
+
+function escapeHtml(text) {
+
+    return String(text)
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+/* =====================================================
+   PROFIL
+===================================================== */
+
+function updateProfile() {
+
+    const name =
+        localStorage.getItem(
+            "name"
+        ) || "Joueur";
+
+
+    const nameTop =
+        document.getElementById(
+            "profile-name"
+        );
+
+    const panelName =
+        document.getElementById(
+            "profile-panel-name"
+        );
+
+
+    if (nameTop) {
+        nameTop.textContent =
+            name;
+    }
+
+
+    if (panelName) {
+        panelName.textContent =
+            name;
+    }
+
+
+    const scores =
+        getScores();
+
+
+    const mine =
+        scores.filter(
+            x => x.name === name
+        );
+
+
+    const points =
+        mine.reduce(
+            (sum, x) =>
+                sum + x.score,
+            0
+        );
+
+
+    const games =
+        mine.length;
+
+
+    const best =
+        games
+            ? Math.max(
+                ...mine.map(
+                    x => x.score
+                )
+            )
+            : 0;
+
+
+    const average =
+        games
+            ? Math.round(
+                points / games
+            )
+            : 0;
+
+
+    document.getElementById(
+        "profile-score"
+    ).textContent =
+        points;
+
+
+    document.getElementById(
+        "profile-games"
+    ).textContent =
+        games;
+
+
+    document.getElementById(
+        "profile-best"
+    ).textContent =
+        best;
+
+
+    document.getElementById(
+        "profile-average"
+    ).textContent =
+        average;
+
+
+    updateTickets();
+
+}
+
+
+/* =====================================================
+   PORTEFEUILLE
+===================================================== */
+
+function getWallet() {
+
+    return JSON.parse(
+
+        localStorage.getItem(
+            "wallet"
+        )
+
+        ||
+
+        JSON.stringify({
+
+            balance: 0,
+
+            winnings: 0,
+
+            withdrawn: 0,
+
+            history: []
+
+        })
+
+    );
+
+}
+
+
+function updateWallet() {
+
+    const wallet =
+        getWallet();
+
+
+    const balance =
+        document.getElementById(
+            "available-balance"
+        );
+
+    const winnings =
+        document.getElementById(
+            "total-winnings"
+        );
+
+    const withdrawn =
+        document.getElementById(
+            "total-withdrawn"
+        );
+
+
+    if (balance) {
+
+        balance.textContent =
+            wallet.balance +
+            " HTG";
+
+    }
+
+
+    if (winnings) {
+
+        winnings.textContent =
+            wallet.winnings +
+            " HTG";
+
+    }
+
+
+    if (withdrawn) {
+
+        withdrawn.textContent =
+            wallet.withdrawn +
+            " HTG";
+
+    }
+
+}
+
+
+/* =====================================================
+   HISTORIQUE
+===================================================== */
+
+function showHistory() {
+
+    const wallet =
+        getWallet();
+
+
+    const box =
+        document.getElementById(
+            "history-list"
+        );
+
+
+    box.innerHTML = "";
+
+
+    if (
+        !wallet.history ||
+        !wallet.history.length
+    ) {
+
+        box.innerHTML =
+            "<p class='muted'>Aucune activité.</p>";
+
+    }
+
+    else {
+
+        wallet.history.forEach(
+            item => {
+
+                const row =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                row.className =
+                    "ranking-row";
+
+
+                row.innerHTML = `
+
+                    <span>
+                        ${item.icon || "📜"}
+                    </span>
+
+                    <span class="ranking-name">
+
+                        ${escapeHtml(
+                            item.text || ""
+                        )}
+
+                        <br>
+
+                        <small>
+                            ${escapeHtml(
+                                item.date || ""
+                            )}
+                        </small>
+
+                    </span>
+
+                    <span class="ranking-score">
+                        ${item.amount || 0} HTG
+                    </span>
+
+                `;
+
+
+                box.appendChild(row);
+
+            }
+        );
+
+    }
+
+
+    screen("history");
+
+}
+
+
+/* =====================================================
+   PROFIL — OUVRIR
+===================================================== */
+
+document.getElementById(
+    "btn-profile"
+).onclick = () => {
+
+    document.getElementById(
+        "profile-name-input"
+    ).value =
+        localStorage.getItem(
+            "name"
+        ) || "";
+
+
+    document.getElementById(
+        "profile-phone-input"
+    ).value =
+        localStorage.getItem(
+            "phone"
+        ) || "";
+
+
+    document.getElementById(
+        "profile-panel"
+    ).classList.add(
+        "active"
+    );
+
+};
+
+
+/* =====================================================
+   PROFIL — FERMER
+===================================================== */
+
+document.getElementById(
+    "btn-close-profile"
+).onclick = () => {
+
+    document.getElementById(
+        "profile-panel"
+    ).classList.remove(
+        "active"
+    );
+
+};
+
+
+/* =====================================================
+   ENREGISTRER PROFIL
+===================================================== */
+
+document.getElementById(
+    "btn-save-profile"
+).onclick = () => {
+
+    const name =
+        document.getElementById(
+            "profile-name-input"
+        ).value.trim();
+
+
+    const phone =
+        document.getElementById(
+            "profile-phone-input"
+        ).value.trim();
+
+
+    if (name.length < 2) {
+
+        alert(
+            "Entre ton nom."
+        );
+
+        return;
+    }
+
+
+    if (phone.length < 8) {
+
+        alert(
+            "Entre un numéro valide."
+        );
+
+        return;
+    }
+
+
+    localStorage.setItem(
+        "name",
+        name
+    );
+
+
+    localStorage.setItem(
+        "phone",
+        phone
+    );
+
+
+    updateProfile();
+
+
+    document.getElementById(
+        "profile-panel"
+    ).classList.remove(
+        "active"
+    );
+
+
+    alert(
+        "✅ Profil enregistré."
+    );
+
+};
+
+
+/* =====================================================
+   NAVIGATION
+===================================================== */
+
+document.getElementById(
+    "btn-how-to"
+).onclick = () => {
+
+    screen("how-to");
+
+};
+
+
+document.getElementById(
+    "btn-how-to-back"
+).onclick = () => {
+
+    screen("home");
+
+};
+
+
+document.getElementById(
+    "btn-gains"
+).onclick = () => {
+
+    updateWallet();
+
+    screen("gains");
+
+};
+
+
+document.getElementById(
+    "btn-gains-back"
+).onclick = () => {
+
+    screen("home");
+
+};
+
+
+document.getElementById(
+    "btn-history"
+).onclick =
+    showHistory;
+
+
+document.getElementById(
+    "btn-history-back"
+).onclick = () => {
+
+    screen("home");
+
+};
+
+
+document.getElementById(
+    "btn-ranking-home"
+).onclick = () => {
+
+    screen("home");
+
+};
+
+
+document.getElementById(
+    "btn-result-ranking"
+).onclick =
+    showRanking;
+
+
+document.getElementById(
+    "btn-home"
+).onclick = () => {
+
+    screen("home");
+
+};
+
+
+document.getElementById(
+    "btn-quit"
+).onclick = () => {
+
+    clearInterval(
+        state.timer
+    );
+
+    screen("home");
+
+};
+
+
+document.getElementById(
+    "btn-replay"
+).onclick = () => {
+
+    startQuiz(
+        state.category
+    );
+
+};
+
+
+/* =====================================================
+   RETRAIT
+===================================================== */
+
+document.getElementById(
+    "btn-withdraw"
+).onclick = () => {
+
+    const phone =
+        localStorage.getItem(
+            "phone"
+        );
+
+
+    const wallet =
+        getWallet();
+
+
+    const status =
+        document.getElementById(
+            "withdraw-status"
+        );
+
+
+    if (!phone) {
+
+        status.textContent =
+            "⚠️ Enregistre ton numéro dans ton profil.";
+
+        return;
+    }
+
+
+    if (wallet.balance <= 0) {
+
+        status.textContent =
+            "⚠️ Ton solde est de 0 HTG.";
+
+        return;
+    }
+
+
+    status.textContent =
+        "⚠️ Le retrait réel n'est pas encore connecté.";
+
+};
+
+
+/* =====================================================
+   INITIALISATION
+===================================================== */
 
 renderCategories();
 
-updateTickets();
+loadTickets();
 
-showScreen("home");
+updateProfile();
 
-console.log(
-  "🏆 KONKOU est prêt !"
+updateWallet();
+
+setInterval(
+    ticketTimer,
+    1000
 );
+
+
+/* =====================================================
+   TEST DE CONNEXION SERVEUR
+===================================================== */
+
+async function testServer() {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/api`
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "🟢 Serveur Konkou connecté :",
+            data
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "🔴 Serveur Konkou inaccessible :",
+            error
+        );
+
+    }
+
+}
+
+
+testServer();
