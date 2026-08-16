@@ -1,0 +1,4077 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#2563eb">
+
+<title>Konkou — Joue pour gagner</title>
+
+<style>
+
+*{
+box-sizing:border-box;
+margin:0;
+padding:0
+}
+
+body{
+font-family:Arial,sans-serif;
+background:#eef2ff;
+color:#172033;
+min-height:100vh
+}
+
+button,input{
+font:inherit
+}
+
+button{
+cursor:pointer
+}
+
+.app{
+max-width:850px;
+min-height:100vh;
+margin:auto;
+padding-bottom:20px
+}
+
+/* =========================
+   BARRE DU HAUT
+========================= */
+
+.topbar{
+position:sticky;
+top:0;
+z-index:20;
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:14px;
+color:white;
+background:linear-gradient(135deg,#2563eb,#4f46e5)
+}
+
+.logo{
+display:flex;
+align-items:center;
+gap:10px
+}
+
+.logo-icon{
+width:43px;
+height:43px;
+display:flex;
+align-items:center;
+justify-content:center;
+background:rgba(255,255,255,.15);
+border-radius:13px;
+font-size:24px
+}
+
+.logo strong,
+.logo small{
+display:block
+}
+
+.logo strong{
+font-size:20px
+}
+
+.logo small{
+font-size:11px;
+opacity:.8
+}
+
+.topbar-right{
+display:flex;
+align-items:center;
+gap:8px
+}
+
+.profile-button{
+border:0;
+color:white;
+background:rgba(255,255,255,.15);
+border-radius:13px;
+padding:6px 9px;
+display:flex;
+align-items:center;
+gap:7px
+}
+
+.profile-info strong,
+.profile-info small{
+display:block
+}
+
+.profile-info small{
+font-size:10px;
+opacity:.8
+}
+
+.tickets{
+padding:10px 12px;
+border-radius:12px;
+background:rgba(255,255,255,.15);
+font-weight:bold
+}
+
+/* =========================
+   ECRANS
+========================= */
+
+.screen{
+display:none;
+padding:22px 16px
+}
+
+.screen.active{
+display:block
+}
+
+/* =========================
+   ACCUEIL
+========================= */
+
+.hero{
+color:white;
+text-align:center;
+padding:35px 22px;
+margin-bottom:20px;
+border-radius:25px;
+background:linear-gradient(135deg,#2563eb,#7c3aed);
+box-shadow:0 12px 30px rgba(37,99,235,.2)
+}
+
+.hero-icon{
+font-size:55px
+}
+
+.hero h1{
+margin:10px 0;
+font-size:28px
+}
+
+.hero p{
+line-height:1.5;
+opacity:.9
+}
+
+.ticket-info{
+margin-top:20px;
+padding:14px;
+border-radius:14px;
+background:rgba(255,255,255,.15)
+}
+
+.ticket-countdown{
+margin-top:7px;
+font-size:12px
+}
+
+.info-card{
+width:100%;
+border:0;
+margin-bottom:13px;
+padding:17px;
+border-radius:17px;
+color:white;
+display:flex;
+align-items:center;
+gap:12px;
+text-align:left;
+background:linear-gradient(135deg,#2563eb,#7c3aed)
+}
+
+.info-icon{
+font-size:25px
+}
+
+.info-card span:nth-child(2){
+flex:1
+}
+
+.info-card strong,
+.info-card small{
+display:block
+}
+
+.info-card small{
+margin-top:4px;
+opacity:.8
+}
+
+.info-arrow{
+font-size:26px
+}
+
+.section-title{
+margin:25px 0 14px
+}
+
+.section-title p,
+.muted{
+color:#64748b;
+margin-top:5px
+}
+
+.category-grid{
+display:grid;
+gap:12px
+}
+
+.category-grid button{
+border:0;
+padding:18px;
+border-radius:16px;
+background:white;
+display:flex;
+justify-content:space-between;
+box-shadow:0 5px 15px rgba(15,23,42,.08)
+}
+
+.category-grid button span:first-child{
+font-weight:bold;
+color:#1e3a8a
+}
+
+.cat-count{
+color:#64748b;
+font-size:12px
+}
+
+/* =========================
+   FOOTER DEVELOPPEUR
+========================= */
+
+.developer-footer{
+margin:35px 16px 10px;
+padding:25px 15px;
+text-align:center;
+border-top:1px solid #dbe3ef;
+color:#64748b
+}
+
+.developer-logo{
+font-size:22px;
+font-weight:bold;
+color:#2563eb;
+margin-bottom:8px
+}
+
+.developer-footer p{
+font-size:13px;
+margin-bottom:6px
+}
+
+.developer-footer strong{
+color:#1e3a8a
+}
+
+.developer-footer small{
+font-size:11px;
+color:#94a3b8
+}
+
+/* =========================
+   CARTES
+========================= */
+
+.card{
+max-width:600px;
+margin:15px auto;
+padding:26px;
+background:white;
+border-radius:24px;
+box-shadow:0 10px 30px rgba(15,23,42,.08)
+}
+
+.card h2{
+text-align:center;
+color:#1e3a8a;
+margin-bottom:12px
+}
+
+label{
+display:block;
+margin-top:15px;
+margin-bottom:7px;
+font-weight:bold
+}
+
+input{
+width:100%;
+padding:13px;
+border:2px solid #e2e8f0;
+border-radius:12px;
+outline:none
+}
+
+input:focus{
+border-color:#2563eb
+}
+
+.primary,
+.secondary{
+width:100%;
+border:0;
+padding:14px;
+border-radius:13px;
+margin-top:12px;
+font-weight:bold
+}
+
+.primary{
+color:white;
+background:linear-gradient(135deg,#2563eb,#4f46e5)
+}
+
+.primary:disabled{
+opacity:.6;
+cursor:not-allowed
+}
+
+.secondary{
+color:#334155;
+background:#e2e8f0
+}
+
+/* =========================
+   QUIZ
+========================= */
+
+.quiz-top{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:12px;
+font-weight:bold
+}
+
+#timer{
+padding:8px 12px;
+border-radius:10px;
+color:white;
+background:#2563eb
+}
+
+#timer.low{
+background:#ef4444
+}
+
+.progress-track{
+height:8px;
+background:#dbeafe;
+border-radius:10px;
+overflow:hidden
+}
+
+.progress-fill{
+height:100%;
+width:0;
+background:#2563eb
+}
+
+.quiz-category{
+display:inline-block;
+margin:22px 0 12px;
+padding:7px 12px;
+border-radius:20px;
+color:#1d4ed8;
+background:#dbeafe;
+font-size:12px;
+font-weight:bold
+}
+
+#quiz-question{
+font-size:24px;
+line-height:1.35;
+margin-bottom:18px
+}
+
+.quiz-choices{
+display:grid;
+gap:10px
+}
+
+.quiz-choices button{
+padding:16px;
+border:2px solid #e2e8f0;
+background:white;
+border-radius:13px;
+text-align:left
+}
+
+.quiz-choices button.correct{
+background:#dcfce7;
+border-color:#22c55e
+}
+
+.quiz-choices button.wrong{
+background:#fee2e2;
+border-color:#ef4444
+}
+
+.score-line{
+margin:18px 0;
+font-weight:bold;
+color:#2563eb
+}
+
+/* =========================
+   RESULTAT
+========================= */
+
+.result-icon,
+.how-to-icon{
+text-align:center;
+font-size:55px
+}
+
+.result-score{
+text-align:center;
+margin:15px 0
+}
+
+.result-score strong{
+display:block;
+font-size:38px;
+color:#2563eb
+}
+
+.result-stats{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:10px
+}
+
+.result-stats div{
+padding:14px 5px;
+background:#eff6ff;
+border-radius:13px;
+text-align:center
+}
+
+.result-stats span,
+.result-stats strong{
+display:block
+}
+
+.result-stats span{
+color:#64748b;
+font-size:11px
+}
+
+.result-stats strong{
+color:#1e3a8a;
+margin-top:5px;
+font-size:20px
+}
+
+.result-message{
+text-align:center;
+margin:20px 0;
+color:#475569
+}
+
+.result-winnings{
+text-align:center;
+margin:14px 0;
+padding:12px;
+border-radius:13px;
+background:#ecfdf5;
+color:#047857;
+font-weight:bold
+}
+
+/* =========================
+   CLASSEMENT
+========================= */
+
+.podium{
+display:flex;
+align-items:end;
+justify-content:center;
+gap:8px;
+margin:30px 0 25px
+}
+
+.podium-player{
+width:30%;
+text-align:center;
+position:relative
+}
+
+.podium-avatar{
+width:58px;
+height:58px;
+margin:auto;
+display:flex;
+align-items:center;
+justify-content:center;
+border-radius:50%;
+background:#dbeafe;
+font-size:28px
+}
+
+.podium-player.first .podium-avatar{
+width:75px;
+height:75px;
+background:#fef3c7;
+font-size:38px
+}
+
+.podium-player.second .podium-avatar{
+background:#e2e8f0
+}
+
+.podium-player.third .podium-avatar{
+background:#fed7aa
+}
+
+.podium-name{
+font-weight:bold;
+margin-top:7px;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis
+}
+
+.podium-score{
+font-size:12px;
+color:#64748b;
+margin-top:3px
+}
+
+.podium-rank{
+margin-top:8px;
+padding:12px 5px;
+border-radius:12px 12px 0 0;
+font-weight:bold;
+color:white;
+background:#2563eb
+}
+
+.first .podium-rank{
+padding:25px 5px;
+background:#f59e0b
+}
+
+.second .podium-rank{
+padding:18px 5px;
+background:#64748b
+}
+
+.third .podium-rank{
+padding:12px 5px;
+background:#c2410c
+}
+
+.my-ranking{
+margin:20px 0;
+padding:18px;
+border-radius:18px;
+background:linear-gradient(135deg,#eff6ff,#eef2ff);
+border:2px solid #bfdbfe
+}
+
+.my-ranking-title{
+font-size:13px;
+color:#64748b
+}
+
+.my-ranking-main{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-top:8px
+}
+
+.my-ranking-main strong{
+font-size:24px;
+color:#2563eb
+}
+
+.ranking-list{
+margin:18px 0
+}
+
+.ranking-row{
+display:flex;
+align-items:center;
+gap:10px;
+padding:14px;
+margin-bottom:9px;
+background:#f8fafc;
+border-radius:13px
+}
+
+.ranking-row.me{
+background:#dbeafe;
+border:1px solid #93c5fd
+}
+
+.ranking-name{
+flex:1;
+font-weight:bold
+}
+
+.ranking-score{
+color:#2563eb;
+font-weight:bold
+}
+
+/* =========================
+   STATISTIQUES
+========================= */
+
+.statistics{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:10px;
+margin:20px 0
+}
+
+.stat-box{
+padding:17px;
+background:#f8fafc;
+border-radius:16px;
+text-align:center
+}
+
+.stat-icon{
+font-size:25px
+}
+
+.stat-box strong{
+display:block;
+font-size:23px;
+color:#2563eb;
+margin-top:5px
+}
+
+.stat-box small{
+color:#64748b
+}
+
+/* =========================
+   COMMENT CA MARCHE
+========================= */
+
+.how-to-step{
+display:flex;
+gap:13px;
+padding:15px 0;
+border-bottom:1px solid #e2e8f0
+}
+
+.how-to-step>b{
+width:33px;
+height:33px;
+min-width:33px;
+display:flex;
+justify-content:center;
+align-items:center;
+border-radius:50%;
+color:white;
+background:#2563eb
+}
+
+.how-to-step p{
+margin-top:4px;
+color:#64748b
+}
+
+/* =========================
+   PROFIL
+========================= */
+
+.profile-panel{
+display:none;
+position:fixed;
+inset:0;
+z-index:100;
+padding:20px;
+background:rgba(15,23,42,.55);
+align-items:center;
+justify-content:center
+}
+
+.profile-panel.active{
+display:flex
+}
+
+.profile-box{
+width:100%;
+max-width:450px;
+padding:28px;
+background:white;
+border-radius:24px;
+position:relative;
+max-height:90vh;
+overflow:auto
+}
+
+.close-profile{
+position:absolute;
+right:15px;
+top:15px;
+width:35px;
+height:35px;
+border:0;
+border-radius:50%;
+background:#e2e8f0
+}
+
+.big-avatar{
+width:80px;
+height:80px;
+margin:auto;
+display:flex;
+align-items:center;
+justify-content:center;
+border-radius:50%;
+background:#dbeafe;
+font-size:42px
+}
+
+.profile-box h2{
+text-align:center;
+margin-top:12px;
+color:#1e3a8a
+}
+
+.profile-stats{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:8px;
+margin-top:20px
+}
+
+.profile-stats div{
+padding:12px 4px;
+background:#f8fafc;
+border-radius:12px;
+text-align:center
+}
+
+.profile-stats strong,
+.profile-stats small{
+display:block
+}
+
+.profile-stats strong{
+color:#2563eb;
+margin-top:4px
+}
+
+.profile-stats small{
+color:#64748b;
+font-size:10px;
+margin-top:3px
+}
+
+.status{
+text-align:center;
+margin-top:12px;
+color:#475569
+}
+
+/* =========================
+   PAIEMENTS
+========================= */
+
+.payment-row{
+display:flex;
+justify-content:space-between;
+padding:13px 0;
+border-bottom:1px solid #e2e8f0
+}
+
+.payment-row.total{
+color:#2563eb;
+font-size:18px
+}
+
+.payment-methods{
+display:grid;
+gap:10px;
+margin-top:14px
+}
+
+.payment-methods button{
+border:2px solid #e2e8f0;
+background:white;
+padding:14px;
+border-radius:13px;
+display:flex;
+align-items:center;
+gap:10px;
+text-align:left;
+font-weight:bold;
+color:#1e3a8a
+}
+
+.payment-methods button.selected{
+border-color:#2563eb;
+background:#eff6ff
+}
+
+.payment-modal{
+display:none;
+position:fixed;
+inset:0;
+z-index:110;
+padding:20px;
+background:rgba(15,23,42,.55);
+align-items:center;
+justify-content:center
+}
+
+.payment-modal.active{
+display:flex
+}
+
+.payment-box{
+width:100%;
+max-width:420px;
+padding:26px;
+background:white;
+border-radius:22px;
+text-align:center
+}
+
+.payment-spinner{
+width:46px;
+height:46px;
+margin:18px auto;
+border-radius:50%;
+border:5px solid #dbeafe;
+border-top-color:#2563eb;
+animation:spin 0.8s linear infinite
+}
+
+@keyframes spin{
+to{transform:rotate(360deg)}
+}
+
+.payment-step{
+display:none
+}
+
+.payment-step.active{
+display:block
+}
+
+.payment-success-icon{
+font-size:50px
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width:600px){
+
+.profile-info{
+display:none
+}
+
+.hero h1{
+font-size:24px
+}
+
+#quiz-question{
+font-size:21px
+}
+
+.statistics{
+grid-template-columns:repeat(2,1fr)
+}
+
+.developer-footer{
+margin-top:30px
+}
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<!-- =========================
+     BARRE DU HAUT
+========================= -->
+
+<header class="topbar">
+
+<div class="logo">
+
+<div class="logo-icon">
+🏆
+</div>
+
+<div>
+<strong>Konkou</strong>
+<small>Joue pour gagner</small>
+</div>
+
+</div>
+
+<div class="topbar-right">
+
+<button id="btn-profile" class="profile-button">
+
+<span>👤</span>
+
+<span class="profile-info">
+
+<strong id="profile-name">
+Joueur
+</strong>
+
+<small>
+Mon profil
+</small>
+
+</span>
+
+</button>
+
+<div class="tickets">
+🎟️ <span id="ticket-count">3</span>
+</div>
+
+</div>
+
+</header>
+
+
+<!-- =========================
+     ACCUEIL
+========================= -->
+
+<section id="screen-home" class="screen active">
+
+<div class="hero">
+
+<div class="hero-icon">
+🏆
+</div>
+
+<h1>
+Prêt à relever le défi ?
+</h1>
+
+<p>
+Teste tes connaissances, gagne des points
+et améliore ton classement.
+</p>
+
+<div class="ticket-info">
+
+🎟️ Tickets disponibles :
+<strong id="ticket-count-home">3</strong>
+
+<div id="ticket-countdown-home"
+class="ticket-countdown">
+3 tickets disponibles
+</div>
+
+</div>
+
+</div>
+
+
+<button id="btn-register" class="info-card" style="background:linear-gradient(135deg,#f59e0b,#ea580c)">
+
+<span class="info-icon" id="register-icon">
+🎟️
+</span>
+
+<span>
+
+<strong id="register-title">
+S'inscrire au concours — 50 HTG
+</strong>
+
+<small id="register-subtitle">
+Paiement unique pour participer
+</small>
+
+</span>
+
+<span class="info-arrow">
+›
+</span>
+
+</button>
+
+
+<button id="btn-how-to" class="info-card">
+
+<span class="info-icon">
+❓
+</span>
+
+<span>
+
+<strong>
+Comment ça fonctionne ?
+</strong>
+
+<small>
+Découvre les règles de Konkou
+</small>
+
+</span>
+
+<span class="info-arrow">
+›
+</span>
+
+</button>
+
+
+<button id="btn-gains" class="info-card">
+
+<span class="info-icon">
+💰
+</span>
+
+<span>
+
+<strong>
+Mes gains
+</strong>
+
+<small>
+Consulter ton solde et tes gains
+</small>
+
+</span>
+
+<span class="info-arrow">
+›
+</span>
+
+</button>
+
+
+<button id="btn-history" class="info-card">
+
+<span class="info-icon">
+📜
+</span>
+
+<span>
+
+<strong>
+Historique
+</strong>
+
+<small>
+Voir tes activités
+</small>
+
+</span>
+
+<span class="info-arrow">
+›
+</span>
+
+</button>
+
+
+<div class="section-title">
+
+<h2>
+Choisis une catégorie
+</h2>
+
+<p>
+Teste tes connaissances
+</p>
+
+</div>
+
+
+<div id="category-list"
+class="category-grid">
+</div>
+
+
+</section>
+
+
+<!-- =========================
+     QUIZ
+========================= -->
+
+<section id="screen-quiz"
+class="screen">
+
+<div class="quiz-top">
+
+<span id="quiz-progress">
+Question
+</span>
+
+<span id="timer">
+15
+</span>
+
+</div>
+
+<div class="progress-track">
+
+<div id="progress-fill"
+class="progress-fill">
+</div>
+
+</div>
+
+<span id="quiz-category"
+class="quiz-category">
+</span>
+
+<h2 id="quiz-question">
+—
+</h2>
+
+<div id="quiz-choices"
+class="quiz-choices">
+</div>
+
+<div class="score-line">
+Score :
+<span id="quiz-score">0</span>
+</div>
+
+<button id="btn-quit"
+class="secondary">
+Quitter
+</button>
+
+</section>
+
+
+<!-- =========================
+     RESULTAT
+========================= -->
+
+<section id="screen-result"
+class="screen">
+
+<div class="card">
+
+<div class="result-icon">
+🏆
+</div>
+
+<h2>
+Quiz terminé !
+</h2>
+
+<p class="result-score">
+
+Score :
+
+<strong id="result-score">
+0
+</strong>
+
+</p>
+
+<div class="result-stats">
+
+<div>
+<span>Maximum</span>
+<strong id="result-total">0</strong>
+</div>
+
+<div>
+<span>Correctes</span>
+<strong id="result-correct">0</strong>
+</div>
+
+<div>
+<span>Incorrectes</span>
+<strong id="result-wrong">0</strong>
+</div>
+
+</div>
+
+<p id="result-winnings" class="result-winnings">
+</p>
+
+<p id="result-message"
+class="result-message">
+</p>
+
+<button id="btn-replay"
+class="primary">
+Rejouer
+</button>
+
+<button id="btn-result-ranking"
+class="secondary">
+🏆 Voir le classement
+</button>
+
+<button id="btn-home"
+class="secondary">
+Accueil
+</button>
+
+</div>
+
+</section>
+
+
+<!-- =========================
+     CLASSEMENT
+========================= -->
+
+<section id="screen-ranking"
+class="screen">
+
+<div class="card">
+
+<h2>
+🏆 Classement
+</h2>
+
+<p class="muted">
+Les meilleurs joueurs de Konkou
+</p>
+
+<div id="my-ranking"
+class="my-ranking">
+</div>
+
+<div id="podium"
+class="podium">
+</div>
+
+<h3>
+Classement général
+</h3>
+
+<div id="ranking-list"
+class="ranking-list">
+</div>
+
+<button id="btn-ranking-home"
+class="secondary">
+Retour
+</button>
+
+</div>
+
+</section>
+
+
+<!-- =========================
+     COMMENT CA MARCHE
+========================= -->
+
+<section id="screen-how-to"
+class="screen">
+
+<div class="card">
+
+<div class="how-to-icon">
+💡
+</div>
+
+<h2>
+Comment ça fonctionne ?
+</h2>
+
+<div class="how-to-step">
+
+<b>1</b>
+
+<div>
+
+<strong>
+Inscris-toi au concours
+</strong>
+
+<p>
+Paie 50 HTG (simulation) pour participer pendant la durée du concours.
+</p>
+
+</div>
+
+</div>
+
+
+<div class="how-to-step">
+
+<b>2</b>
+
+<div>
+
+<strong>
+Choisis une catégorie
+</strong>
+
+<p>
+Sélectionne ton domaine.
+</p>
+
+</div>
+
+</div>
+
+
+<div class="how-to-step">
+
+<b>3</b>
+
+<div>
+
+<strong>
+Utilise un ticket
+</strong>
+
+<p>
+Un ticket est utilisé au début d'une partie.
+</p>
+
+</div>
+
+</div>
+
+
+<div class="how-to-step">
+
+<b>4</b>
+
+<div>
+
+<strong>
+Réponds aux questions
+</strong>
+
+<p>
+Chaque question possède un chronomètre.
+</p>
+
+</div>
+
+</div>
+
+
+<div class="how-to-step">
+
+<b>5</b>
+
+<div>
+
+<strong>
+Gagne des points
+</strong>
+
+<p>
+Chaque bonne réponse rapporte 10 points.
+</p>
+
+</div>
+
+</div>
+
+
+<div class="how-to-step">
+
+<b>6</b>
+
+<div>
+
+<strong>
+Tickets
+</strong>
+
+<p>
+Les tickets sont renouvelés après 4 heures.
+</p>
+
+</div>
+
+</div>
+
+
+<button id="btn-how-to-back"
+class="secondary">
+Retour
+</button>
+
+</div>
+
+</section>
+
+
+<!-- =========================
+     GAINS
+========================= -->
+
+<section id="screen-gains"
+class="screen">
+
+<div class="card">
+
+<div class="how-to-icon">
+💰
+</div>
+
+<h2>
+Mes gains
+</h2>
+
+<div class="payment-summary">
+
+<div class="payment-row">
+
+<span>
+Solde disponible
+</span>
+
+<strong id="available-balance">
+0 HTG
+</strong>
+
+</div>
+
+<div class="payment-row">
+
+<span>
+Total gagné
+</span>
+
+<strong id="total-winnings">
+0 HTG
+</strong>
+
+</div>
+
+<div class="payment-row">
+
+<span>
+Total retiré
+</span>
+
+<strong id="total-withdrawn">
+0 HTG
+</strong>
+
+</div>
+
+</div>
+
+<button id="btn-withdraw"
+class="primary">
+💸 Demander un retrait
+</button>
+
+<button id="btn-gains-back"
+class="secondary">
+Retour
+</button>
+
+<p id="withdraw-status"
+class="status">
+</p>
+
+</div>
+
+</section>
+
+
+<!-- =========================
+     HISTORIQUE
+========================= -->
+
+<section id="screen-history"
+class="screen">
+
+<div class="card">
+
+<h2>
+📜 Historique
+</h2>
+
+<div id="history-list"
+class="ranking-list">
+</div>
+
+<button id="btn-history-back"
+class="secondary">
+Retour
+</button>
+
+</div>
+
+</section>
+
+
+<!-- =========================
+     DEVELOPPEUR
+========================= -->
+
+<footer class="developer-footer">
+
+<div class="developer-logo">
+🏆 Konkou
+</div>
+
+<p>
+Développé par
+<strong>
+Fawenbert Regis
+</strong>
+</p>
+
+<small>
+© 2026 Konkou — Tous droits réservés
+</small>
+
+</footer>
+
+</div>
+
+
+<!-- =========================
+     PROFIL
+========================= -->
+
+<div id="profile-panel"
+class="profile-panel">
+
+<div class="profile-box">
+
+<button id="btn-close-profile"
+class="close-profile">
+✕
+</button>
+
+<div class="big-avatar">
+👤
+</div>
+
+<h2 id="profile-panel-name">
+Joueur
+</h2>
+
+<p id="profile-panel-location" class="muted" style="text-align:center;margin-top:-8px;margin-bottom:6px">
+</p>
+
+<label>
+Nom
+</label>
+
+<input
+id="profile-name-input"
+type="text"
+placeholder="Ton nom"
+>
+
+<label>
+Numéro
+</label>
+
+<input
+id="profile-phone-input"
+type="tel"
+placeholder="Ton numéro"
+>
+
+<label>
+Lieu
+</label>
+
+<input
+id="profile-location-input"
+type="text"
+placeholder="Ta ville / commune"
+>
+
+<button id="btn-save-profile"
+class="primary">
+Enregistrer
+</button>
+
+
+<div class="statistics">
+
+<div class="stat-box">
+
+<div class="stat-icon">
+⭐
+</div>
+
+<strong id="profile-score">
+0
+</strong>
+
+<small>
+Points
+</small>
+
+</div>
+
+
+<div class="stat-box">
+
+<div class="stat-icon">
+🎮
+</div>
+
+<strong id="profile-games">
+0
+</strong>
+
+<small>
+Parties
+</small>
+
+</div>
+
+
+<div class="stat-box">
+
+<div class="stat-icon">
+🏆
+</div>
+
+<strong id="profile-best">
+0
+</strong>
+
+<small>
+Meilleur score
+</small>
+
+</div>
+
+
+<div class="stat-box">
+
+<div class="stat-icon">
+📊
+</div>
+
+<strong id="profile-average">
+0
+</strong>
+
+<small>
+Moyenne
+</small>
+
+</div>
+
+</div>
+
+
+<div class="profile-stats">
+
+<div>
+
+🎟️
+
+<strong id="profile-tickets">
+3
+</strong>
+
+<small>
+Tickets
+</small>
+
+</div>
+
+
+<div>
+
+🏅
+
+<strong id="profile-rank">
+—
+</strong>
+
+<small>
+Rang
+</small>
+
+</div>
+
+
+<div>
+
+💰
+
+<strong id="profile-win">
+0
+</strong>
+
+<small>
+Gains
+</small>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- =========================
+     MODAL PAIEMENT (RETRAIT)
+========================= -->
+
+<div id="payment-modal" class="payment-modal">
+
+<div class="payment-box">
+
+<div id="pay-step-method" class="payment-step active">
+
+<h2>Retirer mes gains</h2>
+
+<p class="muted">Solde disponible : <strong id="pay-modal-balance">0 HTG</strong></p>
+
+<label>Montant à retirer (HTG)</label>
+<input id="pay-amount-input" type="number" min="1" placeholder="Ex: 500">
+
+<label>Moyen de paiement</label>
+
+<div class="payment-methods">
+
+<button type="button" class="pay-method" data-method="MonCash">📱 MonCash</button>
+<button type="button" class="pay-method" data-method="NatCash">📲 NatCash</button>
+<button type="button" class="pay-method" data-method="Virement bancaire">🏦 Virement bancaire</button>
+
+</div>
+
+<button id="btn-pay-confirm" class="primary">Confirmer le retrait</button>
+<button id="btn-pay-cancel" class="secondary">Annuler</button>
+
+<p id="pay-method-status" class="status"></p>
+
+</div>
+
+<div id="pay-step-processing" class="payment-step">
+
+<div class="payment-spinner"></div>
+<h2>Paiement en cours…</h2>
+<p class="muted" id="pay-processing-text">Traitement de ta demande de retrait.</p>
+
+</div>
+
+<div id="pay-step-success" class="payment-step">
+
+<div class="payment-success-icon">✅</div>
+<h2>Retrait simulé réussi</h2>
+<p class="muted" id="pay-success-text"></p>
+<p class="muted" style="margin-top:10px;font-size:12px">
+Ceci est une simulation — aucun argent réel n'a été transféré.
+</p>
+
+<button id="btn-pay-close" class="primary">Fermer</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- =========================
+     MODAL INSCRIPTION AU CONCOURS
+========================= -->
+
+<div id="register-modal" class="payment-modal">
+
+<div class="payment-box">
+
+<div id="reg-step-method" class="payment-step active">
+
+<h2>Inscription au concours</h2>
+
+<p class="muted">Frais d'inscription : <strong>50 HTG</strong></p>
+
+<label>Moyen de paiement</label>
+
+<div class="payment-methods">
+
+<button type="button" class="reg-method" data-method="MonCash">📱 MonCash</button>
+<button type="button" class="reg-method" data-method="NatCash">📲 NatCash</button>
+<button type="button" class="reg-method" data-method="Virement bancaire">🏦 Virement bancaire</button>
+
+</div>
+
+<button id="btn-reg-confirm" class="primary">Payer 50 HTG et m'inscrire</button>
+<button id="btn-reg-cancel" class="secondary">Annuler</button>
+
+<p id="reg-method-status" class="status"></p>
+
+</div>
+
+<div id="reg-step-processing" class="payment-step">
+
+<div class="payment-spinner"></div>
+<h2>Paiement en cours…</h2>
+<p class="muted" id="reg-processing-text">Traitement de ton inscription au concours.</p>
+
+</div>
+
+<div id="reg-step-success" class="payment-step">
+
+<div class="payment-success-icon">✅</div>
+<h2>Inscription confirmée</h2>
+<p class="muted" id="reg-success-text"></p>
+<p class="muted" style="margin-top:10px;font-size:12px">
+Ceci est une simulation — aucun argent réel n'a été transféré.
+</p>
+
+<button id="btn-reg-close" class="primary">Commencer à jouer</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* =========================
+   ETAT DU JEU
+========================= */
+
+const state={
+
+category:null,
+
+questions:[],
+
+index:0,
+
+score:0,
+
+correct:0,
+
+wrong:0,
+
+timer:null,
+
+time:15,
+
+tickets:3
+
+};
+
+const RESET=4*60*60*1000;
+
+const QUESTION_TIME=15;
+
+const HTG_PER_POINT=2;
+
+
+/* =========================
+   CATEGORIES
+========================= */
+
+const categories=[
+
+{
+
+name:"📚 Histoire d'Haïti",
+
+questions:[
+
+{
+
+q:"En quelle année Haïti est-elle devenue indépendante ?",
+
+c:[
+"1791",
+"1804",
+"1815",
+"1822"
+],
+
+a:1
+
+},
+
+{
+
+q:"Qui a proclamé l'indépendance d'Haïti ?",
+
+c:[
+"Toussaint Louverture",
+"Jean-Jacques Dessalines",
+"Alexandre Pétion",
+"Henri Christophe"
+],
+
+a:1
+
+},
+
+{
+
+q:"Quelle bataille est associée à la victoire décisive de l'armée indigène ?",
+
+c:[
+"Vertières",
+"Jacmel",
+"Léogâne",
+"Port-au-Prince"
+],
+
+a:0
+
+}
+
+]
+
+},
+
+
+{
+
+name:"🌎 Géographie",
+
+questions:[
+
+{
+
+q:"Quelle est la capitale d'Haïti ?",
+
+c:[
+"Cap-Haïtien",
+"Jacmel",
+"Port-au-Prince",
+"Gonaïves"
+],
+
+a:2
+
+},
+
+{
+
+q:"Avec quel pays Haïti partage-t-elle Hispaniola ?",
+
+c:[
+"Cuba",
+"Jamaïque",
+"République Dominicaine",
+"Porto Rico"
+],
+
+a:2
+
+}
+
+]
+
+},
+
+
+{
+
+name:"⚽ Sport",
+
+questions:[
+
+{
+
+q:"Combien de joueurs une équipe de football possède-t-elle normalement sur le terrain ?",
+
+c:[
+"7",
+"9",
+"11",
+"13"
+],
+
+a:2
+
+}
+
+]
+
+},
+
+
+{
+
+name:"💻 Informatique",
+
+questions:[
+
+{
+
+q:"Que signifie HTML ?",
+
+c:[
+"HyperText Markup Language",
+"HighText Machine Language",
+"HyperTool Modern Language",
+"Home Tool Markup Language"
+],
+
+a:0
+
+},
+
+{
+
+q:"Quel langage rend principalement une page web interactive ?",
+
+c:[
+"JavaScript",
+"HTML",
+"SQL",
+"XML"
+],
+
+a:0
+
+}
+
+]
+
+}
+
+];
+
+
+/* =========================
+   ECRANS
+========================= */
+
+const screens=[
+"home",
+"quiz",
+"result",
+"ranking",
+"how-to",
+"gains",
+"history"
+];
+
+
+function screen(name){
+
+screens.forEach(x=>{
+
+const el=
+document.getElementById(
+"screen-"+x
+);
+
+if(el)
+el.classList.remove("active");
+
+});
+
+const selected=
+document.getElementById(
+"screen-"+name
+);
+
+if(selected)
+selected.classList.add("active");
+
+window.scrollTo({
+top:0,
+behavior:"smooth"
+});
+
+}
+
+
+/* =========================
+   TICKETS
+========================= */
+
+function loadTickets(){
+
+const data=
+JSON.parse(
+localStorage.getItem("tickets")||"null"
+);
+
+if(!data){
+
+state.tickets=3;
+
+localStorage.setItem(
+"tickets",
+JSON.stringify({
+count:3,
+time:Date.now()
+})
+);
+
+}
+
+else if(
+Date.now()-data.time>=RESET
+){
+
+state.tickets=3;
+
+localStorage.setItem(
+"tickets",
+JSON.stringify({
+count:3,
+time:Date.now()
+})
+);
+
+}
+
+else{
+
+state.tickets=data.count;
+
+}
+
+updateTickets();
+
+}
+
+
+function updateTickets(){
+
+document.getElementById(
+"ticket-count"
+).textContent=
+state.tickets;
+
+document.getElementById(
+"ticket-count-home"
+).textContent=
+state.tickets;
+
+document.getElementById(
+"profile-tickets"
+).textContent=
+state.tickets;
+
+}
+
+
+function ticketTimer(){
+
+const data=
+JSON.parse(
+localStorage.getItem("tickets")||"null"
+);
+
+const element=
+document.getElementById(
+"ticket-countdown-home"
+);
+
+if(!data){
+
+element.textContent=
+"3 tickets disponibles";
+
+return;
+
+}
+
+if(state.tickets>=3){
+
+element.textContent=
+"3 tickets disponibles";
+
+return;
+
+}
+
+const remaining=
+Math.max(
+0,
+data.time+RESET-Date.now()
+);
+
+if(remaining<=0){
+
+loadTickets();
+
+return;
+
+}
+
+const h=
+Math.floor(
+remaining/3600000
+);
+
+const m=
+Math.floor(
+remaining%3600000/60000
+);
+
+const s=
+Math.floor(
+remaining%60000/1000
+);
+
+element.textContent=
+`⏱️ Recharge dans ${h}h ${String(m).padStart(2,"0")}min ${String(s).padStart(2,"0")}s`;
+
+}
+
+
+function useTicket(){
+
+if(state.tickets<=0){
+
+alert(
+"Tu n'as plus de tickets. Ils seront renouvelés après 4 heures."
+);
+
+return false;
+
+}
+
+const data=
+JSON.parse(
+localStorage.getItem("tickets")
+);
+
+state.tickets--;
+
+localStorage.setItem(
+"tickets",
+JSON.stringify({
+count:state.tickets,
+time:data.time
+})
+);
+
+updateTickets();
+
+return true;
+
+}
+
+
+/* =========================
+   CATEGORIES
+========================= */
+
+function renderCategories(){
+
+const box=
+document.getElementById(
+"category-list"
+);
+
+box.innerHTML="";
+
+categories.forEach(
+(category,i)=>{
+
+const button=
+document.createElement("button");
+
+button.innerHTML=`
+
+<span>
+${category.name}
+</span>
+
+<span class="cat-count">
+${category.questions.length} questions
+</span>
+
+`;
+
+button.onclick=()=>{
+startQuiz(i);
+};
+
+box.appendChild(button);
+
+});
+
+
+const ranking=
+document.createElement("button");
+
+ranking.innerHTML=`
+
+<span>
+🏆 Classement
+</span>
+
+<span class="cat-count">
+Voir les scores
+</span>
+
+`;
+
+ranking.onclick=showRanking;
+
+box.appendChild(ranking);
+
+}
+
+
+/* =========================
+   DEMARRER QUIZ
+========================= */
+
+function startQuiz(i){
+
+if(!isRegistered()){
+
+pendingCategory=i;
+
+openRegistrationModal();
+
+return;
+
+}
+
+if(!useTicket())
+return;
+
+state.category=i;
+
+state.questions=[
+...categories[i].questions
+];
+
+state.questions.sort(
+()=>Math.random()-.5
+);
+
+state.index=0;
+
+state.score=0;
+
+state.correct=0;
+
+state.wrong=0;
+
+screen("quiz");
+
+question();
+
+}
+
+
+/* =========================
+   QUESTION
+========================= */
+
+function question(){
+
+clearInterval(state.timer);
+
+const q=
+state.questions[state.index];
+
+document.getElementById(
+"quiz-category"
+).textContent=
+categories[state.category].name;
+
+document.getElementById(
+"quiz-question"
+).textContent=
+q.q;
+
+document.getElementById(
+"quiz-progress"
+).textContent=
+`Question ${state.index+1} sur ${state.questions.length}`;
+
+document.getElementById(
+"quiz-score"
+).textContent=
+state.score;
+
+document.getElementById(
+"progress-fill"
+).style.width=
+(state.index/state.questions.length*100)+"%";
+
+
+const answers=
+q.c.map(
+(text,index)=>({
+
+text,
+
+correct:index===q.a
+
+})
+);
+
+
+answers.sort(
+()=>Math.random()-.5
+);
+
+
+const box=
+document.getElementById(
+"quiz-choices"
+);
+
+box.innerHTML="";
+
+
+answers.forEach(
+answer=>{
+
+const button=
+document.createElement("button");
+
+button.textContent=
+answer.text;
+
+button.onclick=()=>{
+
+answerQuestion(
+button,
+answer.correct
+);
+
+};
+
+box.appendChild(button);
+
+});
+
+
+startTimer();
+
+}
+
+
+/* =========================
+   CHRONOMETRE
+========================= */
+
+function startTimer(){
+
+state.time=
+QUESTION_TIME;
+
+const timer=
+document.getElementById(
+"timer"
+);
+
+timer.textContent=
+state.time;
+
+timer.classList.remove("low");
+
+state.timer=
+setInterval(
+()=>{
+
+state.time--;
+
+timer.textContent=
+state.time;
+
+if(state.time<=5)
+timer.classList.add("low");
+
+if(state.time<=0){
+
+clearInterval(state.timer);
+
+answerQuestion(
+null,
+false
+);
+
+}
+
+},
+1000
+);
+
+}
+
+
+/* =========================
+   REPONSE
+========================= */
+
+function answerQuestion(
+button,
+correct
+){
+
+if(
+document.querySelector(
+"#quiz-choices button:disabled"
+)
+)
+return;
+
+clearInterval(state.timer);
+
+document.querySelectorAll(
+"#quiz-choices button"
+).forEach(
+b=>b.disabled=true
+);
+
+
+if(button){
+
+button.classList.add(
+correct
+?"correct"
+:"wrong"
+);
+
+}
+
+
+if(correct){
+
+state.correct++;
+
+state.score+=10;
+
+}
+
+else{
+
+state.wrong++;
+
+}
+
+
+document.getElementById(
+"quiz-score"
+).textContent=
+state.score;
+
+
+setTimeout(
+()=>{
+
+state.index++;
+
+if(
+state.index<
+state.questions.length
+){
+
+question();
+
+}
+
+else{
+
+finish();
+
+}
+
+},
+700
+);
+
+}
+
+
+/* =========================
+   FIN
+========================= */
+
+function finish(){
+
+const total=
+state.questions.length*10;
+
+document.getElementById(
+"result-score"
+).textContent=
+state.score;
+
+document.getElementById(
+"result-total"
+).textContent=
+total;
+
+document.getElementById(
+"result-correct"
+).textContent=
+state.correct;
+
+document.getElementById(
+"result-wrong"
+).textContent=
+state.wrong;
+
+
+const ratio=
+state.score/total;
+
+
+document.getElementById(
+"result-message"
+).textContent=
+
+ratio===1
+?"🏆 Excellent ! Score parfait."
+
+:ratio>=.7
+?"👏 Très bon résultat."
+
+:ratio>=.5
+?"👍 Bon travail."
+
+:"💪 Continue à t'entraîner.";
+
+
+saveScore();
+
+const earned=
+state.score*HTG_PER_POINT;
+
+if(earned>0){
+
+addWinnings(
+earned,
+categories[state.category].name
+);
+
+}
+
+document.getElementById(
+"result-winnings"
+).textContent=
+earned>0
+?`💰 +${earned} HTG ajoutés à ton solde`
+:"";
+
+
+screen("result");
+
+}
+
+
+/* =========================
+   SCORES
+========================= */
+
+function getScores(){
+
+return JSON.parse(
+localStorage.getItem("scores")||"[]"
+);
+
+}
+
+
+function saveScore(){
+
+const scores=
+getScores();
+
+const name=
+localStorage.getItem(
+"name"
+)||"Joueur";
+
+
+scores.push({
+
+name:name,
+
+score:state.score,
+
+category:
+categories[state.category].name,
+
+correct:state.correct,
+
+wrong:state.wrong,
+
+date:
+new Date().toLocaleString()
+
+});
+
+
+localStorage.setItem(
+"scores",
+JSON.stringify(scores)
+);
+
+updateProfile();
+
+}
+
+
+/* =========================
+   JOUEURS
+========================= */
+
+function calculatePlayers(){
+
+const scores=
+getScores();
+
+const players={};
+
+
+scores.forEach(game=>{
+
+if(!players[game.name]){
+
+players[game.name]={
+
+name:game.name,
+
+points:0,
+
+games:0,
+
+best:0
+
+};
+
+}
+
+
+players[game.name].points+=
+game.score;
+
+players[game.name].games++;
+
+players[game.name].best=
+Math.max(
+players[game.name].best,
+game.score
+);
+
+});
+
+
+return Object.values(players)
+.sort(
+(a,b)=>b.points-a.points
+);
+
+}
+
+
+/* =========================
+   CLASSEMENT
+========================= */
+
+function showRanking(){
+
+const players=
+calculatePlayers();
+
+const name=
+localStorage.getItem(
+"name"
+)||"Joueur";
+
+
+const myIndex=
+players.findIndex(
+p=>p.name===name
+);
+
+const me=
+players[myIndex];
+
+
+const myBox=
+document.getElementById(
+"my-ranking"
+);
+
+
+if(me){
+
+myBox.innerHTML=`
+
+<div class="my-ranking-title">
+TON CLASSEMENT
+</div>
+
+<div class="my-ranking-main">
+
+<div>
+
+<strong>
+#${myIndex+1}
+</strong>
+
+<div>
+${escapeHtml(me.name)}
+</div>
+
+</div>
+
+<div>
+
+<strong>
+${me.points}
+</strong>
+
+<div>
+points
+</div>
+
+</div>
+
+</div>
+
+`;
+
+}
+
+else{
+
+myBox.innerHTML=`
+
+<div class="my-ranking-title">
+TON CLASSEMENT
+</div>
+
+<p class="muted">
+Joue une partie pour apparaître dans le classement.
+</p>
+
+`;
+
+}
+
+
+const podium=
+document.getElementById(
+"podium"
+);
+
+podium.innerHTML="";
+
+
+const order=[
+1,
+0,
+2
+];
+
+
+order.forEach(
+position=>{
+
+const player=
+players[position];
+
+if(!player)
+return;
+
+
+const div=
+document.createElement("div");
+
+
+div.className=
+"podium-player "+
+(
+position===0
+?"first"
+:
+position===1
+?"second"
+:
+"third"
+);
+
+
+const medal=
+position===0
+?"🥇"
+:
+position===1
+?"🥈"
+:
+"🥉";
+
+
+div.innerHTML=`
+
+<div class="podium-avatar">
+${medal}
+</div>
+
+<div class="podium-name">
+${escapeHtml(player.name)}
+</div>
+
+<div class="podium-score">
+${player.points} points
+</div>
+
+<div class="podium-rank">
+#${position+1}
+</div>
+
+`;
+
+
+podium.appendChild(div);
+
+});
+
+
+const list=
+document.getElementById(
+"ranking-list"
+);
+
+list.innerHTML="";
+
+
+if(!players.length){
+
+list.innerHTML=
+"<p class='muted'>Aucun joueur classé.</p>";
+
+}
+
+else{
+
+players
+.slice(0,20)
+.forEach(
+(player,index)=>{
+
+const row=
+document.createElement("div");
+
+
+row.className=
+"ranking-row "+
+(
+player.name===name
+?"me"
+:
+""
+);
+
+
+row.innerHTML=`
+
+<span>
+#${index+1}
+</span>
+
+<span class="ranking-name">
+${escapeHtml(player.name)}
+</span>
+
+<span>
+${player.games} 🎮
+</span>
+
+<span class="ranking-score">
+${player.points} pts
+</span>
+
+`;
+
+
+list.appendChild(row);
+
+});
+
+}
+
+
+updateProfile();
+
+screen("ranking");
+
+}
+
+
+/* =========================
+   SECURITE TEXTE
+========================= */
+
+function escapeHtml(text){
+
+return String(text)
+
+.replace(/&/g,"&amp;")
+
+.replace(/</g,"&lt;")
+
+.replace(/>/g,"&gt;")
+
+.replace(/"/g,"&quot;")
+
+.replace(/'/g,"&#039;");
+
+}
+
+
+/* =========================
+   PROFIL
+========================= */
+
+function updateProfile(){
+
+const name=
+localStorage.getItem(
+"name"
+)||"Joueur";
+
+
+document.getElementById(
+"profile-name"
+).textContent=
+name;
+
+
+document.getElementById(
+"profile-panel-name"
+).textContent=
+name;
+
+
+const location=
+localStorage.getItem(
+"location"
+);
+
+document.getElementById(
+"profile-panel-location"
+).textContent=
+location
+?"📍 "+location
+:"";
+
+
+const scores=
+getScores();
+
+
+const mine=
+scores.filter(
+x=>x.name===name
+);
+
+
+const points=
+mine.reduce(
+(sum,x)=>sum+x.score,
+0
+);
+
+
+const games=
+mine.length;
+
+
+const best=
+games
+?Math.max(
+...mine.map(
+x=>x.score
+)
+)
+:0;
+
+
+const average=
+games
+?Math.round(
+points/games
+)
+:0;
+
+
+const players=
+calculatePlayers();
+
+
+const position=
+players.findIndex(
+p=>p.name===name
+);
+
+
+document.getElementById(
+"profile-score"
+).textContent=
+points;
+
+
+document.getElementById(
+"profile-games"
+).textContent=
+games;
+
+
+document.getElementById(
+"profile-best"
+).textContent=
+best;
+
+
+document.getElementById(
+"profile-average"
+).textContent=
+average;
+
+
+document.getElementById(
+"profile-rank"
+).textContent=
+position>=0
+?"#"+(position+1)
+:"—";
+
+
+const wallet=
+getWallet();
+
+
+document.getElementById(
+"profile-win"
+).textContent=
+wallet.winnings;
+
+
+updateTickets();
+
+}
+
+
+/* =========================
+   PORTEFEUILLE
+========================= */
+
+function getWallet(){
+
+return JSON.parse(
+
+localStorage.getItem("wallet")
+
+||
+
+JSON.stringify({
+
+balance:0,
+
+winnings:0,
+
+withdrawn:0,
+
+history:[]
+
+})
+
+);
+
+}
+
+
+function saveWallet(w){
+
+localStorage.setItem(
+"wallet",
+JSON.stringify(w)
+);
+
+}
+
+
+function addWinnings(amount,category){
+
+const w=
+getWallet();
+
+w.balance+=amount;
+
+w.winnings+=amount;
+
+w.history.unshift({
+
+icon:"🎉",
+
+text:`Gains — ${category}`,
+
+amount:"+"+amount,
+
+date:new Date().toLocaleString()
+
+});
+
+saveWallet(w);
+
+updateWallet();
+
+updateProfile();
+
+}
+
+
+function updateWallet(){
+
+const w=
+getWallet();
+
+
+document.getElementById(
+"available-balance"
+).textContent=
+w.balance+" HTG";
+
+
+document.getElementById(
+"total-winnings"
+).textContent=
+w.winnings+" HTG";
+
+
+document.getElementById(
+"total-withdrawn"
+).textContent=
+w.withdrawn+" HTG";
+
+}
+
+
+/* =========================
+   HISTORIQUE
+========================= */
+
+function showHistory(){
+
+const w=
+getWallet();
+
+
+const box=
+document.getElementById(
+"history-list"
+);
+
+box.innerHTML="";
+
+
+if(!w.history.length){
+
+box.innerHTML=
+"<p class='muted'>Aucune activité.</p>";
+
+}
+
+else{
+
+w.history.forEach(
+item=>{
+
+const row=
+document.createElement("div");
+
+row.className=
+"ranking-row";
+
+
+row.innerHTML=`
+
+<span>
+${item.icon}
+</span>
+
+<span class="ranking-name">
+
+${escapeHtml(item.text)}
+
+<br>
+
+<small>
+${escapeHtml(item.date)}
+</small>
+
+</span>
+
+<span class="ranking-score">
+${item.amount} HTG
+</span>
+
+`;
+
+
+box.appendChild(row);
+
+});
+
+}
+
+
+screen("history");
+
+}
+
+
+/* =========================
+   PROFIL : OUVERTURE
+========================= */
+
+document.getElementById(
+"btn-profile"
+).onclick=()=>{
+
+document.getElementById(
+"profile-name-input"
+).value=
+localStorage.getItem(
+"name"
+)||"";
+
+
+document.getElementById(
+"profile-phone-input"
+).value=
+localStorage.getItem(
+"phone"
+)||"";
+
+
+document.getElementById(
+"profile-location-input"
+).value=
+localStorage.getItem(
+"location"
+)||"";
+
+
+document.getElementById(
+"profile-panel"
+).classList.add("active");
+
+};
+
+
+/* =========================
+   PROFIL : FERMETURE
+========================= */
+
+document.getElementById(
+"btn-close-profile"
+).onclick=()=>{
+
+document.getElementById(
+"profile-panel"
+).classList.remove("active");
+
+};
+
+
+/* =========================
+   ENREGISTRER PROFIL
+========================= */
+
+document.getElementById(
+"btn-save-profile"
+).onclick=()=>{
+
+const name=
+document.getElementById(
+"profile-name-input"
+).value.trim();
+
+
+const phone=
+document.getElementById(
+"profile-phone-input"
+).value.trim();
+
+
+const location=
+document.getElementById(
+"profile-location-input"
+).value.trim();
+
+
+if(name.length<2){
+
+alert(
+"Entre ton nom."
+);
+
+return;
+
+}
+
+
+if(phone.length<8){
+
+alert(
+"Entre un numéro valide."
+);
+
+return;
+
+}
+
+
+if(location.length<2){
+
+alert(
+"Entre ton lieu (ville / commune)."
+);
+
+return;
+
+}
+
+
+localStorage.setItem(
+"name",
+name
+);
+
+
+localStorage.setItem(
+"phone",
+phone
+);
+
+
+localStorage.setItem(
+"location",
+location
+);
+
+
+updateProfile();
+
+
+document.getElementById(
+"profile-panel"
+).classList.remove(
+"active"
+);
+
+
+alert(
+"✅ Profil enregistré."
+);
+
+};
+
+
+/* =========================
+   NAVIGATION
+========================= */
+
+document.getElementById(
+"btn-how-to"
+).onclick=()=>{
+screen("how-to");
+};
+
+
+document.getElementById(
+"btn-how-to-back"
+).onclick=()=>{
+screen("home");
+};
+
+
+document.getElementById(
+"btn-gains"
+).onclick=()=>{
+
+updateWallet();
+
+screen("gains");
+
+};
+
+
+document.getElementById(
+"btn-gains-back"
+).onclick=()=>{
+screen("home");
+};
+
+
+document.getElementById(
+"btn-history"
+).onclick=
+showHistory;
+
+
+document.getElementById(
+"btn-history-back"
+).onclick=()=>{
+screen("home");
+};
+
+
+document.getElementById(
+"btn-ranking-home"
+).onclick=()=>{
+screen("home");
+};
+
+
+document.getElementById(
+"btn-result-ranking"
+).onclick=
+showRanking;
+
+
+document.getElementById(
+"btn-home"
+).onclick=()=>{
+screen("home");
+};
+
+
+document.getElementById(
+"btn-quit"
+).onclick=()=>{
+
+clearInterval(
+state.timer
+);
+
+screen("home");
+
+};
+
+
+document.getElementById(
+"btn-replay"
+).onclick=()=>{
+
+startQuiz(
+state.category
+);
+
+};
+
+
+/* =========================
+   RETRAIT — SIMULATION DE PAIEMENT
+========================= */
+
+let selectedMethod=null;
+
+function openPaymentModal(){
+
+const phone=
+localStorage.getItem("phone");
+
+const w=
+getWallet();
+
+const status=
+document.getElementById(
+"withdraw-status"
+);
+
+if(!phone){
+
+status.textContent=
+"⚠️ Enregistre ton numéro dans ton profil.";
+
+return;
+
+}
+
+if(w.balance<=0){
+
+status.textContent=
+"⚠️ Ton solde est de 0 HTG.";
+
+return;
+
+}
+
+status.textContent="";
+
+selectedMethod=null;
+
+document.querySelectorAll(
+".pay-method"
+).forEach(b=>b.classList.remove("selected"));
+
+document.getElementById(
+"pay-amount-input"
+).value="";
+
+document.getElementById(
+"pay-method-status"
+).textContent="";
+
+document.getElementById(
+"pay-modal-balance"
+).textContent=
+w.balance+" HTG";
+
+showPaymentStep("method");
+
+document.getElementById(
+"payment-modal"
+).classList.add("active");
+
+}
+
+
+function showPaymentStep(step){
+
+["method","processing","success"].forEach(s=>{
+
+document.getElementById(
+"pay-step-"+s
+).classList.toggle(
+"active",
+s===step
+);
+
+});
+
+}
+
+
+document.querySelectorAll(".pay-method").forEach(btn=>{
+
+btn.onclick=()=>{
+
+selectedMethod=btn.dataset.method;
+
+document.querySelectorAll(".pay-method").forEach(
+b=>b.classList.remove("selected")
+);
+
+btn.classList.add("selected");
+
+};
+
+});
+
+
+document.getElementById(
+"btn-pay-confirm"
+).onclick=()=>{
+
+const w=
+getWallet();
+
+const status=
+document.getElementById(
+"pay-method-status"
+);
+
+const amount=
+parseInt(
+document.getElementById(
+"pay-amount-input"
+).value,
+10
+);
+
+if(!selectedMethod){
+
+status.textContent=
+"⚠️ Choisis un moyen de paiement.";
+
+return;
+
+}
+
+if(!amount||amount<=0){
+
+status.textContent=
+"⚠️ Entre un montant valide.";
+
+return;
+
+}
+
+if(amount>w.balance){
+
+status.textContent=
+"⚠️ Montant supérieur à ton solde disponible.";
+
+return;
+
+}
+
+
+status.textContent="";
+
+showPaymentStep("processing");
+
+document.getElementById(
+"pay-processing-text"
+).textContent=
+`Envoi de ${amount} HTG via ${selectedMethod}…`;
+
+
+setTimeout(
+()=>{
+
+const wallet=
+getWallet();
+
+wallet.balance-=amount;
+
+wallet.withdrawn+=amount;
+
+wallet.history.unshift({
+
+icon:"💸",
+
+text:`Retrait — ${selectedMethod}`,
+
+amount:"-"+amount,
+
+date:new Date().toLocaleString()
+
+});
+
+saveWallet(wallet);
+
+updateWallet();
+
+updateProfile();
+
+
+document.getElementById(
+"pay-success-text"
+).textContent=
+`${amount} HTG envoyés via ${selectedMethod}.`;
+
+
+showPaymentStep("success");
+
+},
+2000
+);
+
+};
+
+
+document.getElementById(
+"btn-pay-cancel"
+).onclick=()=>{
+
+document.getElementById(
+"payment-modal"
+).classList.remove("active");
+
+};
+
+
+document.getElementById(
+"btn-pay-close"
+).onclick=()=>{
+
+document.getElementById(
+"payment-modal"
+).classList.remove("active");
+
+document.getElementById(
+"withdraw-status"
+).textContent=
+"✅ Retrait simulé effectué avec succès.";
+
+};
+
+
+document.getElementById(
+"btn-withdraw"
+).onclick=
+openPaymentModal;
+
+
+/* =========================
+   INSCRIPTION AU CONCOURS — SIMULATION DE PAIEMENT
+========================= */
+
+const REGISTRATION_FEE=50;
+
+let pendingCategory=null;
+
+let selectedRegMethod=null;
+
+
+function isRegistered(){
+
+return localStorage.getItem("registered")==="1";
+
+}
+
+
+function updateRegisterUI(){
+
+const title=
+document.getElementById("register-title");
+
+const subtitle=
+document.getElementById("register-subtitle");
+
+const icon=
+document.getElementById("register-icon");
+
+if(isRegistered()){
+
+title.textContent=
+"✅ Inscrit(e) au concours";
+
+subtitle.textContent=
+"Tu peux jouer dans toutes les catégories";
+
+icon.textContent="✅";
+
+}
+
+else{
+
+title.textContent=
+`S'inscrire au concours — ${REGISTRATION_FEE} HTG`;
+
+subtitle.textContent=
+"Paiement unique pour participer";
+
+icon.textContent="🎟️";
+
+}
+
+}
+
+
+function showRegStep(step){
+
+["method","processing","success"].forEach(s=>{
+
+document.getElementById(
+"reg-step-"+s
+).classList.toggle(
+"active",
+s===step
+);
+
+});
+
+}
+
+
+function openRegistrationModal(){
+
+if(isRegistered()){
+
+updateRegisterUI();
+
+return;
+
+}
+
+selectedRegMethod=null;
+
+document.querySelectorAll(
+".reg-method"
+).forEach(b=>b.classList.remove("selected"));
+
+document.getElementById(
+"reg-method-status"
+).textContent="";
+
+showRegStep("method");
+
+document.getElementById(
+"register-modal"
+).classList.add("active");
+
+}
+
+
+document.getElementById(
+"btn-register"
+).onclick=()=>{
+
+pendingCategory=null;
+
+openRegistrationModal();
+
+};
+
+
+document.querySelectorAll(".reg-method").forEach(btn=>{
+
+btn.onclick=()=>{
+
+selectedRegMethod=btn.dataset.method;
+
+document.querySelectorAll(".reg-method").forEach(
+b=>b.classList.remove("selected")
+);
+
+btn.classList.add("selected");
+
+};
+
+});
+
+
+document.getElementById(
+"btn-reg-confirm"
+).onclick=()=>{
+
+const status=
+document.getElementById(
+"reg-method-status"
+);
+
+if(!selectedRegMethod){
+
+status.textContent=
+"⚠️ Choisis un moyen de paiement.";
+
+return;
+
+}
+
+status.textContent="";
+
+showRegStep("processing");
+
+document.getElementById(
+"reg-processing-text"
+).textContent=
+`Envoi de ${REGISTRATION_FEE} HTG via ${selectedRegMethod}…`;
+
+setTimeout(
+()=>{
+
+localStorage.setItem(
+"registered",
+"1"
+);
+
+const w=
+getWallet();
+
+w.history.unshift({
+
+icon:"🎟️",
+
+text:`Inscription au concours — ${selectedRegMethod}`,
+
+amount:"-"+REGISTRATION_FEE,
+
+date:new Date().toLocaleString()
+
+});
+
+saveWallet(w);
+
+document.getElementById(
+"reg-success-text"
+).textContent=
+`Inscription payée (${REGISTRATION_FEE} HTG via ${selectedRegMethod}). Bonne chance !`;
+
+updateRegisterUI();
+
+showRegStep("success");
+
+},
+2000
+);
+
+};
+
+
+document.getElementById(
+"btn-reg-cancel"
+).onclick=()=>{
+
+document.getElementById(
+"register-modal"
+).classList.remove("active");
+
+pendingCategory=null;
+
+};
+
+
+document.getElementById(
+"btn-reg-close"
+).onclick=()=>{
+
+document.getElementById(
+"register-modal"
+).classList.remove("active");
+
+if(pendingCategory!==null){
+
+const cat=pendingCategory;
+
+pendingCategory=null;
+
+startQuiz(cat);
+
+}
+
+};
+
+
+/* =========================
+   INITIALISATION
+========================= */
+
+renderCategories();
+
+loadTickets();
+
+updateProfile();
+
+updateWallet();
+
+updateRegisterUI();
+
+
+setInterval(
+ticketTimer,
+1000
+);
+
+</script>
+
+</body>
+</html>
