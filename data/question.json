@@ -1,0 +1,149 @@
+{
+  "categories": [
+    {
+      "name": "Culture générale",
+      "questions": [
+        {
+          "question": "Quelle est la capitale de la France ?",
+          "choices": ["Paris", "Madrid", "Rome", "Berlin"],
+          "answerIndex": 0
+        },
+        {
+          "question": "Combien y a-t-il de continents sur Terre ?",
+          "choices": ["5", "6", "7", "8"],
+          "answerIndex": 2
+        },
+        {
+          "question": "Quel est le plus grand océan du monde ?",
+          "choices": ["Atlantique", "Indien", "Arctique", "Pacifique"],
+          "answerIndex": 3
+        },
+        {
+          "question": "Quelle planète est surnommée la planète rouge ?",
+          "choices": ["Mars", "Vénus", "Jupiter", "Mercure"],
+          "answerIndex": 0
+        },
+        {
+          "question": "Combien de jours compte une année normale ?",
+          "choices": ["360", "365", "366", "370"],
+          "answerIndex": 1
+        }
+      ]
+    },
+    {
+      "name": "Culture haïtienne",
+      "questions": [
+        {
+          "question": "Quelle est la capitale d'Haïti ?",
+          "choices": ["Cap-Haïtien", "Port-au-Prince", "Les Cayes", "Jacmel"],
+          "answerIndex": 1
+        },
+        {
+          "question": "Quelle est la fête nationale d'Haïti ?",
+          "choices": ["1er janvier", "18 mai", "17 octobre", "20 mai"],
+          "answerIndex": 0
+        },
+        {
+          "question": "Quelles sont les deux langues officielles d'Haïti ?",
+          "choices": [
+            "Français et créole",
+            "Français et espagnol",
+            "Créole et anglais",
+            "Espagnol et créole"
+          ],
+          "answerIndex": 0
+        }
+      ]
+    },
+    {
+      "name": "Sport",
+      "questions": [
+        {
+          "question": "Combien de joueurs une équipe de football possède-t-elle sur le terrain au début d'un match ?",
+          "choices": ["9", "10", "11", "12"],
+          "answerIndex": 2
+        },
+        {
+          "question": "Quel sport utilise une raquette et un volant ?",
+          "choices": ["Tennis", "Badminton", "Golf", "Volley-ball"],
+          "answerIndex": 1
+        },
+        {
+          "question": "Combien de points vaut généralement un panier à trois points au basketball ?",
+          "choices": ["1", "2", "3", "4"],
+          "answerIndex": 2
+        }
+      ]
+    },
+    {
+      "name": "Actualité",
+      "questions": [
+        {
+          "question": "Quel domaine concerne principalement les nouvelles concernant les événements récents ?",
+          "choices": [
+            "L'actualité",
+            "La géométrie",
+            "La botanique",
+            "La grammaire"
+          ],
+          "answerIndex": 0
+        },
+        {
+          "question": "Quel moyen est couramment utilisé pour diffuser rapidement les informations ?",
+          "choices": [
+            "Les médias",
+            "Les dictionnaires",
+            "Les cartes routières",
+            "Les encyclopédies uniquement"
+          ],
+          "answerIndex": 0
+        }
+      ]
+    },
+    {
+      "name": "Sciences",
+      "questions": [
+        {
+          "question": "Quelle est la formule chimique de l'eau ?",
+          "choices": ["CO2", "H2O", "O2", "NaCl"],
+          "answerIndex": 1
+        },
+        {
+          "question": "Quelle planète est la plus proche du Soleil ?",
+          "choices": ["Vénus", "Terre", "Mars", "Mercure"],
+          "answerIndex": 3
+        },
+        {
+          "question": "Quel organe pompe le sang dans le corps humain ?",
+          "choices": ["Le cerveau", "Le cœur", "Le foie", "Le poumon"],
+          "answerIndex": 1
+        }
+      ]
+    },
+    {
+      "name": "Informatique",
+      "questions": [
+        {
+          "question": "Que signifie HTML ?",
+          "choices": [
+            "HyperText Markup Language",
+            "HighText Machine Language",
+            "HyperTool Modern Language",
+            "HomeText Markup Language"
+          ],
+          "answerIndex": 0
+        },
+        {
+          "question": "Quel langage est principalement utilisé pour styliser une page web ?",
+          "choices": ["HTML", "CSS", "SQL", "Python"],
+          "answerIndex": 1
+        },
+        {
+          "question": "Quel langage permet de rendre une page web interactive ?",
+          "choices": ["JavaScript", "CSS", "HTML uniquement", "XML"],
+          "answerIndex": 0
+        }
+      ]
+    }
+  ]
+}
