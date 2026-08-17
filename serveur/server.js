@@ -11,17 +11,19 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors({
     origin: "*",
-    methods: ["GET", "POST", "OPTIONS"],
+    methods: ["GET", "POST", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type"]
 }));
 
 app.use(express.json());
+
 
 /* =====================================================
    DONNÉES DES JOUEURS
 ===================================================== */
 
 let players = [];
+
 
 /* =====================================================
    TEST SERVEUR
@@ -37,6 +39,7 @@ app.get("/", (req, res) => {
 
 });
 
+
 /* =====================================================
    API
 ===================================================== */
@@ -51,6 +54,7 @@ app.get("/api", (req, res) => {
 
 });
 
+
 /* =====================================================
    AJOUTER UN SCORE
 ===================================================== */
@@ -60,6 +64,7 @@ app.post("/api/players", (req, res) => {
     try {
 
         const { name, score } = req.body;
+
 
         /* Vérification du nom */
 
@@ -76,6 +81,7 @@ app.post("/api/players", (req, res) => {
 
         }
 
+
         /* Vérification du score */
 
         if (
@@ -91,8 +97,10 @@ app.post("/api/players", (req, res) => {
 
         }
 
+
         const cleanName =
             name.trim();
+
 
         /* Chercher le joueur */
 
@@ -102,6 +110,7 @@ app.post("/api/players", (req, res) => {
                     p.name.toLowerCase() ===
                     cleanName.toLowerCase()
             );
+
 
         /* Nouveau joueur */
 
@@ -130,11 +139,18 @@ app.post("/api/players", (req, res) => {
 
         }
 
+
         /* Ajouter le score */
 
         player.score += score;
 
         player.games += 1;
+
+
+        console.log(
+            `🏆 ${player.name} +${score} points → ${player.score} points`
+        );
+
 
         /* Classement actuel */
 
@@ -165,9 +181,6 @@ app.post("/api/players", (req, res) => {
                     })
                 );
 
-        console.log(
-            `🏆 ${player.name} +${score} points → ${player.score} points`
-        );
 
         res.json({
 
@@ -218,6 +231,61 @@ app.post("/api/players", (req, res) => {
 
 });
 
+
+/* =====================================================
+   LISTE DE TOUS LES JOUEURS
+===================================================== */
+
+app.get("/api/players", (req, res) => {
+
+    try {
+
+        res.json({
+
+            success: true,
+
+            players:
+                players.map(player => ({
+
+                    id:
+                        player.id,
+
+                    name:
+                        player.name,
+
+                    score:
+                        player.score,
+
+                    games:
+                        player.games
+
+                }))
+
+        });
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "❌ Erreur récupération joueurs :",
+            error
+        );
+
+        res.status(500).json({
+
+            success: false,
+
+            message:
+                "Impossible de récupérer les joueurs."
+
+        });
+
+    }
+
+});
+
+
 /* =====================================================
    CLASSEMENT
 ===================================================== */
@@ -253,6 +321,7 @@ app.get("/api/ranking", (req, res) => {
                     })
                 );
 
+
         res.json({
 
             success: true,
@@ -283,6 +352,7 @@ app.get("/api/ranking", (req, res) => {
 
 });
 
+
 /* =====================================================
    RECHERCHER UN JOUEUR
 ===================================================== */
@@ -300,12 +370,14 @@ app.get(
                 .trim()
                 .toLowerCase();
 
+
             const player =
                 players.find(
                     p =>
                         p.name.toLowerCase() ===
                         name
                 );
+
 
             if (!player) {
 
@@ -320,6 +392,7 @@ app.get(
 
             }
 
+
             const ranking =
                 [...players]
                     .sort(
@@ -327,11 +400,13 @@ app.get(
                             b.score - a.score
                     );
 
+
             const position =
                 ranking.findIndex(
                     p =>
                         p.id === player.id
                 ) + 1;
+
 
             res.json({
 
@@ -381,6 +456,7 @@ app.get(
     }
 );
 
+
 /* =====================================================
    SANTÉ DU SERVEUR
 ===================================================== */
@@ -405,6 +481,28 @@ app.get("/api/health", (req, res) => {
 
 });
 
+
+/* =====================================================
+   SUPPRIMER TOUS LES JOUEURS
+   POUR TEST UNIQUEMENT
+===================================================== */
+
+app.delete("/api/players", (req, res) => {
+
+    players = [];
+
+    res.json({
+
+        success: true,
+
+        message:
+            "Classement réinitialisé."
+
+    });
+
+});
+
+
 /* =====================================================
    404 API
 ===================================================== */
@@ -425,6 +523,32 @@ app.use(
     }
 );
 
+
+/* =====================================================
+   GESTION DES ERREURS
+===================================================== */
+
+app.use(
+    (err, req, res, next) => {
+
+        console.error(
+            "❌ Erreur serveur :",
+            err
+        );
+
+        res.status(500).json({
+
+            success: false,
+
+            message:
+                "Erreur interne du serveur."
+
+        });
+
+    }
+);
+
+
 /* =====================================================
    DÉMARRAGE
 ===================================================== */
@@ -438,31 +562,48 @@ app.listen(
         console.log(
             "================================="
         );
+
         console.log(
             "🏆 KONKOU SERVER"
         );
+
         console.log(
             "================================="
         );
+
         console.log(
             `🚀 Port : ${PORT}`
         );
+
         console.log(
             "🌐 API : /api"
         );
+
+        console.log(
+            "👥 Joueurs : /api/players"
+        );
+
         console.log(
             "🏆 Classement : /api/ranking"
         );
+
         console.log(
             "❤️ Santé : /api/health"
         );
+
         console.log(
-            "👥 Joueurs : 0"
+            `👥 Joueurs actuels : ${players.length}`
         );
+
         console.log(
             "================================="
         );
+
         console.log("");
+
+        console.log(
+            "🚀 Serveur Konkou prêt !"
+        );
 
     }
 );
