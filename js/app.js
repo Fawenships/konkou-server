@@ -1,6 +1,6 @@
 /* =====================================================
    KONKOU — APP.JS
-   Connexion au serveur Render
+   Serveur Render + Classement partagé
 ===================================================== */
 
 const API_URL = "https://konkou-server-6.onrender.com";
@@ -28,17 +28,24 @@ const state = {
 
     time: 15,
 
-    tickets: 3
+    tickets: 10
 
 };
 
-const RESET = 4 * 60 * 60 * 1000;
+
+/* =====================================================
+   CONFIGURATION
+===================================================== */
+
+const RESET = 60 * 60 * 1000; // 1 heure
 
 const QUESTION_TIME = 15;
 
+const MAX_TICKETS = 10;
+
 
 /* =====================================================
-   CATEGORIES
+   CATÉGORIES
 ===================================================== */
 
 const categories = [
@@ -90,6 +97,7 @@ const categories = [
         ]
     },
 
+
     {
         name: "🌎 Géographie",
 
@@ -124,6 +132,7 @@ const categories = [
         ]
     },
 
+
     {
         name: "⚽ Sport",
 
@@ -144,6 +153,7 @@ const categories = [
 
         ]
     },
+
 
     {
         name: "💻 Informatique",
@@ -187,6 +197,7 @@ const categories = [
 ===================================================== */
 
 const screens = [
+
     "home",
     "quiz",
     "result",
@@ -194,6 +205,7 @@ const screens = [
     "how-to",
     "gains",
     "history"
+
 ];
 
 
@@ -201,27 +213,35 @@ function screen(name) {
 
     screens.forEach(x => {
 
-        const element = document.getElementById(
-            "screen-" + x
-        );
+        const element =
+            document.getElementById("screen-" + x);
 
         if (element) {
+
             element.classList.remove("active");
+
         }
 
     });
 
-    const selected = document.getElementById(
-        "screen-" + name
-    );
+
+    const selected =
+        document.getElementById("screen-" + name);
+
 
     if (selected) {
+
         selected.classList.add("active");
+
     }
 
+
     window.scrollTo({
+
         top: 0,
+
         behavior: "smooth"
+
     });
 
 }
@@ -233,166 +253,265 @@ function screen(name) {
 
 function loadTickets() {
 
-    const data = JSON.parse(
-        localStorage.getItem("tickets") || "null"
-    );
+    const data =
+        JSON.parse(
+            localStorage.getItem("tickets") || "null"
+        );
+
 
     if (!data) {
 
-        state.tickets = 3;
+        state.tickets = MAX_TICKETS;
+
 
         localStorage.setItem(
+
             "tickets",
+
             JSON.stringify({
-                count: 3,
+
+                count: MAX_TICKETS,
+
                 time: Date.now()
+
             })
+
         );
 
     }
+
 
     else if (
+
         Date.now() - data.time >= RESET
+
     ) {
 
-        state.tickets = 3;
+        state.tickets = MAX_TICKETS;
+
 
         localStorage.setItem(
+
             "tickets",
+
             JSON.stringify({
-                count: 3,
+
+                count: MAX_TICKETS,
+
                 time: Date.now()
+
             })
+
         );
 
     }
+
 
     else {
 
-        state.tickets = data.count;
+        state.tickets =
+            Math.min(
+                data.count,
+                MAX_TICKETS
+            );
 
     }
+
 
     updateTickets();
 
 }
 
 
+/* =====================================================
+   AFFICHER LES TICKETS
+===================================================== */
+
 function updateTickets() {
 
-    const ticket = document.getElementById(
-        "ticket-count"
-    );
+    const ticket =
+        document.getElementById(
+            "ticket-count"
+        );
 
-    const homeTicket = document.getElementById(
-        "ticket-count-home"
-    );
 
-    const profileTicket = document.getElementById(
-        "profile-tickets"
-    );
+    const homeTicket =
+        document.getElementById(
+            "ticket-count-home"
+        );
+
+
+    const profileTicket =
+        document.getElementById(
+            "profile-tickets"
+        );
+
 
     if (ticket) {
-        ticket.textContent = state.tickets;
+
+        ticket.textContent =
+            state.tickets;
+
     }
+
 
     if (homeTicket) {
-        homeTicket.textContent = state.tickets;
+
+        homeTicket.textContent =
+            state.tickets;
+
     }
 
+
     if (profileTicket) {
-        profileTicket.textContent = state.tickets;
+
+        profileTicket.textContent =
+            state.tickets;
+
     }
 
 }
 
 
+/* =====================================================
+   COMPTE À REBOURS DES TICKETS
+===================================================== */
+
 function ticketTimer() {
 
-    const data = JSON.parse(
-        localStorage.getItem("tickets") || "null"
-    );
+    const data =
+        JSON.parse(
+            localStorage.getItem("tickets") || "null"
+        );
 
-    const element = document.getElementById(
-        "ticket-countdown-home"
-    );
+
+    const element =
+        document.getElementById(
+            "ticket-countdown-home"
+        );
+
 
     if (!element) {
+
         return;
+
     }
+
 
     if (!data) {
 
         element.textContent =
-            "3 tickets disponibles";
+            `${MAX_TICKETS} tickets disponibles`;
 
         return;
+
     }
 
-    if (state.tickets >= 3) {
+
+    if (state.tickets >= MAX_TICKETS) {
 
         element.textContent =
-            "3 tickets disponibles";
+            `${MAX_TICKETS} tickets disponibles`;
 
         return;
+
     }
 
-    const remaining = Math.max(
-        0,
-        data.time + RESET - Date.now()
-    );
+
+    const remaining =
+        Math.max(
+
+            0,
+
+            data.time + RESET - Date.now()
+
+        );
+
 
     if (remaining <= 0) {
 
         loadTickets();
 
         return;
+
     }
 
-    const h = Math.floor(
-        remaining / 3600000
-    );
 
-    const m = Math.floor(
-        remaining % 3600000 / 60000
-    );
+    const h =
+        Math.floor(
+            remaining / 3600000
+        );
 
-    const s = Math.floor(
-        remaining % 60000 / 1000
-    );
+
+    const m =
+        Math.floor(
+            remaining % 3600000 / 60000
+        );
+
+
+    const s =
+        Math.floor(
+            remaining % 60000 / 1000
+        );
+
 
     element.textContent =
-        `⏱️ Recharge dans ${h}h ${String(m).padStart(2, "0")}min ${String(s).padStart(2, "0")}s`;
+
+        `⏱️ Recharge dans ${h}h ` +
+
+        `${String(m).padStart(2, "0")}min ` +
+
+        `${String(s).padStart(2, "0")}s`;
 
 }
 
+
+/* =====================================================
+   UTILISER UN TICKET
+===================================================== */
 
 function useTicket() {
 
     if (state.tickets <= 0) {
 
         alert(
-            "Tu n'as plus de tickets. Ils seront renouvelés après 4 heures."
+            "Tu n'as plus de tickets. Ils seront renouvelés après 1 heure."
         );
 
         return false;
+
     }
 
-    const data = JSON.parse(
-        localStorage.getItem("tickets")
-    );
+
+    const data =
+        JSON.parse(
+            localStorage.getItem("tickets") || "null"
+        );
+
 
     state.tickets--;
 
+
     localStorage.setItem(
+
         "tickets",
+
         JSON.stringify({
+
             count: state.tickets,
-            time: data ? data.time : Date.now()
+
+            time:
+                data
+                    ? data.time
+                    : Date.now()
+
         })
+
     );
 
+
     updateTickets();
+
 
     return true;
 
@@ -405,21 +524,29 @@ function useTicket() {
 
 function renderCategories() {
 
-    const box = document.getElementById(
-        "category-list"
-    );
+    const box =
+        document.getElementById(
+            "category-list"
+        );
+
 
     if (!box) {
+
         return;
+
     }
+
 
     box.innerHTML = "";
 
+
     categories.forEach(
+
         (category, i) => {
 
             const button =
                 document.createElement("button");
+
 
             button.innerHTML = `
 
@@ -428,22 +555,30 @@ function renderCategories() {
                 </span>
 
                 <span class="cat-count">
-                    ${category.questions.length} questions
+                    ${category.questions.length}
+                    questions
                 </span>
 
             `;
 
+
             button.onclick = () => {
+
                 startQuiz(i);
+
             };
+
 
             box.appendChild(button);
 
         }
+
     );
+
 
     const ranking =
         document.createElement("button");
+
 
     ranking.innerHTML = `
 
@@ -457,7 +592,10 @@ function renderCategories() {
 
     `;
 
-    ranking.onclick = showRanking;
+
+    ranking.onclick =
+        showRanking;
+
 
     box.appendChild(ranking);
 
@@ -471,28 +609,43 @@ function renderCategories() {
 function startQuiz(i) {
 
     if (!useTicket()) {
+
         return;
+
     }
+
 
     state.category = i;
 
+
     state.questions = [
+
         ...categories[i].questions
+
     ];
 
+
     state.questions.sort(
+
         () => Math.random() - 0.5
+
     );
+
 
     state.index = 0;
 
+
     state.score = 0;
+
 
     state.correct = 0;
 
+
     state.wrong = 0;
 
+
     screen("quiz");
+
 
     question();
 
@@ -505,48 +658,114 @@ function startQuiz(i) {
 
 function question() {
 
-    clearInterval(state.timer);
+    clearInterval(
+        state.timer
+    );
+
 
     const q =
         state.questions[state.index];
 
-    document.getElementById(
-        "quiz-category"
-    ).textContent =
-        categories[state.category].name;
 
-    document.getElementById(
-        "quiz-question"
-    ).textContent =
-        q.q;
+    const categoryElement =
+        document.getElementById(
+            "quiz-category"
+        );
 
-    document.getElementById(
-        "quiz-progress"
-    ).textContent =
-        `Question ${state.index + 1} sur ${state.questions.length}`;
 
-    document.getElementById(
-        "quiz-score"
-    ).textContent =
-        state.score;
+    const questionElement =
+        document.getElementById(
+            "quiz-question"
+        );
 
-    document.getElementById(
-        "progress-fill"
-    ).style.width =
-        (state.index / state.questions.length * 100) + "%";
+
+    const progressElement =
+        document.getElementById(
+            "quiz-progress"
+        );
+
+
+    const scoreElement =
+        document.getElementById(
+            "quiz-score"
+        );
+
+
+    const progressFill =
+        document.getElementById(
+            "progress-fill"
+        );
+
+
+    if (categoryElement) {
+
+        categoryElement.textContent =
+            categories[state.category].name;
+
+    }
+
+
+    if (questionElement) {
+
+        questionElement.textContent =
+            q.q;
+
+    }
+
+
+    if (progressElement) {
+
+        progressElement.textContent =
+
+            `Question ${state.index + 1} ` +
+
+            `sur ${state.questions.length}`;
+
+    }
+
+
+    if (scoreElement) {
+
+        scoreElement.textContent =
+            state.score;
+
+    }
+
+
+    if (progressFill) {
+
+        progressFill.style.width =
+
+            (
+                state.index /
+                state.questions.length *
+                100
+
+            ) + "%";
+
+    }
 
 
     const answers =
+
         q.c.map(
+
             (text, index) => ({
+
                 text: text,
-                correct: index === q.a
+
+                correct:
+                    index === q.a
+
             })
+
         );
 
 
     answers.sort(
+
         () => Math.random() - 0.5
+
     );
 
 
@@ -555,30 +774,48 @@ function question() {
             "quiz-choices"
         );
 
+
+    if (!box) {
+
+        return;
+
+    }
+
+
     box.innerHTML = "";
 
 
     answers.forEach(
+
         answer => {
 
             const button =
-                document.createElement("button");
+                document.createElement(
+                    "button"
+                );
+
 
             button.textContent =
                 answer.text;
 
+
             button.onclick = () => {
 
                 answerQuestion(
+
                     button,
+
                     answer.correct
+
                 );
 
             };
 
+
             box.appendChild(button);
 
         }
+
     );
 
 
@@ -588,7 +825,7 @@ function question() {
 
 
 /* =====================================================
-   CHRONOMÈTRE
+   CHRONOMÈTRE QUESTION
 ===================================================== */
 
 function startTimer() {
@@ -596,32 +833,57 @@ function startTimer() {
     state.time =
         QUESTION_TIME;
 
+
     const timer =
-        document.getElementById("timer");
+        document.getElementById(
+            "timer"
+        );
+
+
+    if (!timer) {
+
+        return;
+
+    }
+
 
     timer.textContent =
         state.time;
 
-    timer.classList.remove("low");
+
+    timer.classList.remove(
+        "low"
+    );
+
 
     state.timer =
+
         setInterval(
+
             () => {
 
                 state.time--;
 
+
                 timer.textContent =
                     state.time;
 
+
                 if (state.time <= 5) {
-                    timer.classList.add("low");
+
+                    timer.classList.add(
+                        "low"
+                    );
+
                 }
+
 
                 if (state.time <= 0) {
 
                     clearInterval(
                         state.timer
                     );
+
 
                     answerQuestion(
                         null,
@@ -631,7 +893,9 @@ function startTimer() {
                 }
 
             },
+
             1000
+
         );
 
 }
@@ -642,37 +906,56 @@ function startTimer() {
 ===================================================== */
 
 function answerQuestion(
+
     button,
+
     correct
+
 ) {
 
     if (
+
         document.querySelector(
+
             "#quiz-choices button:disabled"
+
         )
+
     ) {
+
         return;
+
     }
+
 
     clearInterval(
         state.timer
     );
 
+
     document.querySelectorAll(
+
         "#quiz-choices button"
+
     ).forEach(
+
         b => {
+
             b.disabled = true;
+
         }
+
     );
 
 
     if (button) {
 
         button.classList.add(
+
             correct
                 ? "correct"
                 : "wrong"
+
         );
 
     }
@@ -681,6 +964,7 @@ function answerQuestion(
     if (correct) {
 
         state.correct++;
+
 
         state.score += 10;
 
@@ -693,20 +977,32 @@ function answerQuestion(
     }
 
 
-    document.getElementById(
-        "quiz-score"
-    ).textContent =
-        state.score;
+    const scoreElement =
+        document.getElementById(
+            "quiz-score"
+        );
+
+
+    if (scoreElement) {
+
+        scoreElement.textContent =
+            state.score;
+
+    }
 
 
     setTimeout(
+
         () => {
 
             state.index++;
 
+
             if (
+
                 state.index <
                 state.questions.length
+
             ) {
 
                 question();
@@ -720,7 +1016,9 @@ function answerQuestion(
             }
 
         },
+
         700
+
     );
 
 }
@@ -735,47 +1033,101 @@ async function finish() {
     const total =
         state.questions.length * 10;
 
-    document.getElementById(
-        "result-score"
-    ).textContent =
-        state.score;
 
-    document.getElementById(
-        "result-total"
-    ).textContent =
-        total;
+    const resultScore =
+        document.getElementById(
+            "result-score"
+        );
 
-    document.getElementById(
-        "result-correct"
-    ).textContent =
-        state.correct;
 
-    document.getElementById(
-        "result-wrong"
-    ).textContent =
-        state.wrong;
+    const resultTotal =
+        document.getElementById(
+            "result-total"
+        );
+
+
+    const resultCorrect =
+        document.getElementById(
+            "result-correct"
+        );
+
+
+    const resultWrong =
+        document.getElementById(
+            "result-wrong"
+        );
+
+
+    if (resultScore) {
+
+        resultScore.textContent =
+            state.score;
+
+    }
+
+
+    if (resultTotal) {
+
+        resultTotal.textContent =
+            total;
+
+    }
+
+
+    if (resultCorrect) {
+
+        resultCorrect.textContent =
+            state.correct;
+
+    }
+
+
+    if (resultWrong) {
+
+        resultWrong.textContent =
+            state.wrong;
+
+    }
 
 
     const ratio =
+
         total > 0
+
             ? state.score / total
+
             : 0;
 
 
-    document.getElementById(
-        "result-message"
-    ).textContent =
+    const resultMessage =
+        document.getElementById(
+            "result-message"
+        );
 
-        ratio === 1
-            ? "🏆 Excellent ! Score parfait."
-            : ratio >= 0.7
-                ? "👏 Très bon résultat."
-                : ratio >= 0.5
-                    ? "👍 Bon travail."
-                    : "💪 Continue à t'entraîner.";
+
+    if (resultMessage) {
+
+        resultMessage.textContent =
+
+            ratio === 1
+
+                ? "🏆 Excellent ! Score parfait."
+
+                : ratio >= 0.7
+
+                    ? "👏 Très bon résultat."
+
+                    : ratio >= 0.5
+
+                        ? "👍 Bon travail."
+
+                        : "💪 Continue à t'entraîner.";
+
+    }
 
 
     await saveScore();
+
 
     screen("result");
 
@@ -783,39 +1135,62 @@ async function finish() {
 
 
 /* =====================================================
-   SERVEUR — ENVOYER LE SCORE
+   ENVOYER LE SCORE À RENDER
 ===================================================== */
 
 async function sendScoreToServer(
+
     name,
+
     score
+
 ) {
 
     try {
 
+        console.log(
+            "📤 Envoi du score...",
+            name,
+            score
+        );
+
+
         const response =
+
             await fetch(
+
                 `${API_URL}/api/players`,
+
                 {
+
                     method: "POST",
 
                     headers: {
+
                         "Content-Type":
                             "application/json"
+
                     },
 
                     body: JSON.stringify({
+
                         name: name,
+
                         score: score
+
                     })
+
                 }
+
             );
 
 
         if (!response.ok) {
 
             throw new Error(
+
                 `Erreur HTTP ${response.status}`
+
             );
 
         }
@@ -824,10 +1199,15 @@ async function sendScoreToServer(
         const data =
             await response.json();
 
+
         console.log(
+
             "✅ Score envoyé au serveur :",
+
             data
+
         );
+
 
         return data;
 
@@ -836,9 +1216,13 @@ async function sendScoreToServer(
     catch (error) {
 
         console.error(
+
             "❌ Impossible d'envoyer le score :",
+
             error
+
         );
+
 
         return null;
 
@@ -854,6 +1238,7 @@ async function sendScoreToServer(
 async function saveScore() {
 
     const name =
+
         localStorage.getItem(
             "name"
         ) || "Joueur";
@@ -885,18 +1270,24 @@ async function saveScore() {
 
 
     localStorage.setItem(
+
         "scores",
+
         JSON.stringify(scores)
+
     );
 
 
     /*
-       Envoi vers Render
+       ENVOI À RENDER
     */
 
     await sendScoreToServer(
+
         name,
+
         state.score
+
     );
 
 
@@ -912,16 +1303,18 @@ async function saveScore() {
 function getScores() {
 
     return JSON.parse(
+
         localStorage.getItem(
             "scores"
         ) || "[]"
+
     );
 
 }
 
 
 /* =====================================================
-   RÉCUPÉRER LE CLASSEMENT DU SERVEUR
+   RÉCUPÉRER LE CLASSEMENT RENDER
 ===================================================== */
 
 async function getServerRanking() {
@@ -929,15 +1322,20 @@ async function getServerRanking() {
     try {
 
         const response =
+
             await fetch(
-                `${API_URL}/api/ranking`
+
+                `${API_URL}/api/ranking?t=${Date.now()}`
+
             );
 
 
         if (!response.ok) {
 
             throw new Error(
+
                 `Erreur HTTP ${response.status}`
+
             );
 
         }
@@ -948,8 +1346,11 @@ async function getServerRanking() {
 
 
         console.log(
+
             "🏆 Classement serveur :",
+
             data
+
         );
 
 
@@ -960,9 +1361,13 @@ async function getServerRanking() {
     catch (error) {
 
         console.error(
+
             "❌ Erreur classement serveur :",
+
             error
+
         );
+
 
         return [];
 
@@ -982,10 +1387,12 @@ async function showRanking() {
             "ranking-list"
         );
 
+
     const podium =
         document.getElementById(
             "podium"
         );
+
 
     const myBox =
         document.getElementById(
@@ -994,8 +1401,15 @@ async function showRanking() {
 
 
     if (list) {
+
         list.innerHTML =
-            "<p class='muted'>Chargement du classement...</p>";
+
+            "<p class='muted'>" +
+
+            "Chargement du classement..." +
+
+            "</p>";
+
     }
 
 
@@ -1007,163 +1421,202 @@ async function showRanking() {
 
 
     const name =
+
         localStorage.getItem(
             "name"
         ) || "Joueur";
 
 
     /*
-       Mon classement
+       MON CLASSEMENT
     */
 
     const myIndex =
+
         players.findIndex(
+
             player =>
                 player.name === name
+
         );
 
 
-    if (myIndex >= 0) {
+    if (myBox) {
 
-        const me =
-            players[myIndex];
+        if (myIndex >= 0) {
+
+            const me =
+                players[myIndex];
 
 
-        myBox.innerHTML = `
+            myBox.innerHTML = `
 
-            <div class="my-ranking-title">
-                TON CLASSEMENT
-            </div>
+                <div class="my-ranking-title">
+                    TON CLASSEMENT
+                </div>
 
-            <div class="my-ranking-main">
-
-                <div>
-
-                    <strong>
-                        #${myIndex + 1}
-                    </strong>
+                <div class="my-ranking-main">
 
                     <div>
-                        ${escapeHtml(me.name)}
+
+                        <strong>
+                            #${myIndex + 1}
+                        </strong>
+
+                        <div>
+                            ${escapeHtml(me.name)}
+                        </div>
+
                     </div>
-
-                </div>
-
-                <div>
-
-                    <strong>
-                        ${me.score}
-                    </strong>
 
                     <div>
-                        points
+
+                        <strong>
+                            ${me.score}
+                        </strong>
+
+                        <div>
+                            points
+                        </div>
+
                     </div>
 
-                </div>
-
-            </div>
-
-        `;
-
-    }
-
-    else {
-
-        myBox.innerHTML = `
-
-            <div class="my-ranking-title">
-                TON CLASSEMENT
-            </div>
-
-            <p class="muted">
-                Joue une partie pour apparaître dans le classement.
-            </p>
-
-        `;
-
-    }
-
-
-    /*
-       Podium
-    */
-
-    podium.innerHTML = "";
-
-
-    const order = [
-        1,
-        0,
-        2
-    ];
-
-
-    order.forEach(
-        position => {
-
-            const player =
-                players[position];
-
-            if (!player) {
-                return;
-            }
-
-
-            const div =
-                document.createElement(
-                    "div"
-                );
-
-
-            div.className =
-                "podium-player " +
-                (
-                    position === 0
-                        ? "first"
-                        : position === 1
-                            ? "second"
-                            : "third"
-                );
-
-
-            const medal =
-                position === 0
-                    ? "🥇"
-                    : position === 1
-                        ? "🥈"
-                        : "🥉";
-
-
-            div.innerHTML = `
-
-                <div class="podium-avatar">
-                    ${medal}
-                </div>
-
-                <div class="podium-name">
-                    ${escapeHtml(player.name)}
-                </div>
-
-                <div class="podium-score">
-                    ${player.score} points
-                </div>
-
-                <div class="podium-rank">
-                    #${position + 1}
                 </div>
 
             `;
 
+        }
 
-            podium.appendChild(div);
+        else {
+
+            myBox.innerHTML = `
+
+                <div class="my-ranking-title">
+                    TON CLASSEMENT
+                </div>
+
+                <p class="muted">
+
+                    Joue une partie pour apparaître
+                    dans le classement.
+
+                </p>
+
+            `;
 
         }
-    );
+
+    }
 
 
     /*
-       Liste générale
+       PODIUM
     */
+
+    if (podium) {
+
+        podium.innerHTML = "";
+
+        const order = [
+            1,
+            0,
+            2
+        ];
+
+
+        order.forEach(
+
+            position => {
+
+                const player =
+                    players[position];
+
+
+                if (!player) {
+
+                    return;
+
+                }
+
+
+                const div =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                div.className =
+
+                    "podium-player " +
+
+                    (
+
+                        position === 0
+
+                            ? "first"
+
+                            : position === 1
+
+                                ? "second"
+
+                                : "third"
+
+                    );
+
+
+                const medal =
+
+                    position === 0
+
+                        ? "🥇"
+
+                        : position === 1
+
+                            ? "🥈"
+
+                            : "🥉";
+
+
+                div.innerHTML = `
+
+                    <div class="podium-avatar">
+                        ${medal}
+                    </div>
+
+                    <div class="podium-name">
+                        ${escapeHtml(player.name)}
+                    </div>
+
+                    <div class="podium-score">
+                        ${player.score} points
+                    </div>
+
+                    <div class="podium-rank">
+                        #${position + 1}
+                    </div>
+
+                `;
+
+
+                podium.appendChild(div);
+
+            }
+
+        );
+
+    }
+
+
+    /*
+       LISTE
+    */
+
+    if (!list) {
+
+        return;
+
+    }
+
 
     list.innerHTML = "";
 
@@ -1171,64 +1624,134 @@ async function showRanking() {
     if (!players.length) {
 
         list.innerHTML =
-            "<p class='muted'>Aucun joueur classé.</p>";
+
+            "<p class='muted'>" +
+
+            "Aucun joueur classé." +
+
+            "</p>";
+
+        return;
 
     }
 
-    else {
 
-        players
-            .slice(0, 20)
-            .forEach(
-                (player, index) => {
+    players
 
-                    const row =
-                        document.createElement(
-                            "div"
-                        );
+        .slice(0, 20)
 
+        .forEach(
 
-                    row.className =
-                        "ranking-row " +
-                        (
-                            player.name === name
-                                ? "me"
-                                : ""
-                        );
+            (player, index) => {
+
+                const row =
+                    document.createElement(
+                        "div"
+                    );
 
 
-                    row.innerHTML = `
+                row.className =
 
-                        <span>
-                            #${index + 1}
-                        </span>
+                    "ranking-row " +
 
-                        <span class="ranking-name">
-                            ${escapeHtml(player.name)}
-                        </span>
+                    (
 
-                        <span>
-                            ${player.games} 🎮
-                        </span>
+                        player.name === name
 
-                        <span class="ranking-score">
-                            ${player.score} pts
-                        </span>
+                            ? "me"
 
-                    `;
+                            : ""
+
+                    );
 
 
-                    list.appendChild(row);
+                row.innerHTML = `
 
-                }
-            );
+                    <span>
+                        #${index + 1}
+                    </span>
 
-    }
+                    <span class="ranking-name">
+                        ${escapeHtml(player.name)}
+                    </span>
+
+                    <span>
+                        ${player.games || 0} 🎮
+                    </span>
+
+                    <span class="ranking-score">
+                        ${player.score || 0} pts
+                    </span>
+
+                `;
+
+
+                list.appendChild(row);
+
+            }
+
+        );
 
 
     updateProfile();
 
 }
+
+
+/* =====================================================
+   ACTUALISATION DU CLASSEMENT
+===================================================== */
+
+let rankingRefreshTimer = null;
+
+
+function startRankingRefresh() {
+
+    if (rankingRefreshTimer) {
+
+        clearInterval(
+            rankingRefreshTimer
+        );
+
+    }
+
+
+    rankingRefreshTimer =
+
+        setInterval(
+
+            async () => {
+
+                const rankingScreen =
+                    document.getElementById(
+                        "screen-ranking"
+                    );
+
+
+                if (
+
+                    rankingScreen &&
+
+                    rankingScreen.classList.contains(
+                        "active"
+                    )
+
+                ) {
+
+                    await showRanking();
+
+                }
+
+            },
+
+            3000
+
+        );
+
+}
+
+
+startRankingRefresh();
 
 
 /* =====================================================
@@ -1274,6 +1797,7 @@ function escapeHtml(text) {
 function updateProfile() {
 
     const name =
+
         localStorage.getItem(
             "name"
         ) || "Joueur";
@@ -1284,6 +1808,7 @@ function updateProfile() {
             "profile-name"
         );
 
+
     const panelName =
         document.getElementById(
             "profile-panel-name"
@@ -1291,14 +1816,18 @@ function updateProfile() {
 
 
     if (nameTop) {
+
         nameTop.textContent =
             name;
+
     }
 
 
     if (panelName) {
+
         panelName.textContent =
             name;
+
     }
 
 
@@ -1307,16 +1836,24 @@ function updateProfile() {
 
 
     const mine =
+
         scores.filter(
-            x => x.name === name
+
+            x =>
+                x.name === name
+
         );
 
 
     const points =
+
         mine.reduce(
+
             (sum, x) =>
                 sum + x.score,
+
             0
+
         );
 
 
@@ -1325,45 +1862,90 @@ function updateProfile() {
 
 
     const best =
+
         games
+
             ? Math.max(
+
                 ...mine.map(
-                    x => x.score
+
+                    x =>
+                        x.score
+
                 )
+
             )
+
             : 0;
 
 
     const average =
+
         games
+
             ? Math.round(
+
                 points / games
+
             )
+
             : 0;
 
 
-    document.getElementById(
-        "profile-score"
-    ).textContent =
-        points;
+    const profileScore =
+        document.getElementById(
+            "profile-score"
+        );
 
 
-    document.getElementById(
-        "profile-games"
-    ).textContent =
-        games;
+    const profileGames =
+        document.getElementById(
+            "profile-games"
+        );
 
 
-    document.getElementById(
-        "profile-best"
-    ).textContent =
-        best;
+    const profileBest =
+        document.getElementById(
+            "profile-best"
+        );
 
 
-    document.getElementById(
-        "profile-average"
-    ).textContent =
-        average;
+    const profileAverage =
+        document.getElementById(
+            "profile-average"
+        );
+
+
+    if (profileScore) {
+
+        profileScore.textContent =
+            points;
+
+    }
+
+
+    if (profileGames) {
+
+        profileGames.textContent =
+            games;
+
+    }
+
+
+    if (profileBest) {
+
+        profileBest.textContent =
+            best;
+
+    }
+
+
+    if (profileAverage) {
+
+        profileAverage.textContent =
+            average;
+
+    }
 
 
     updateTickets();
@@ -1402,6 +1984,10 @@ function getWallet() {
 }
 
 
+/* =====================================================
+   METTRE À JOUR PORTEFEUILLE
+===================================================== */
+
 function updateWallet() {
 
     const wallet =
@@ -1413,10 +1999,12 @@ function updateWallet() {
             "available-balance"
         );
 
+
     const winnings =
         document.getElementById(
             "total-winnings"
         );
+
 
     const withdrawn =
         document.getElementById(
@@ -1427,8 +2015,7 @@ function updateWallet() {
     if (balance) {
 
         balance.textContent =
-            wallet.balance +
-            " HTG";
+            wallet.balance + " HTG";
 
     }
 
@@ -1436,8 +2023,7 @@ function updateWallet() {
     if (winnings) {
 
         winnings.textContent =
-            wallet.winnings +
-            " HTG";
+            wallet.winnings + " HTG";
 
     }
 
@@ -1445,8 +2031,7 @@ function updateWallet() {
     if (withdrawn) {
 
         withdrawn.textContent =
-            wallet.withdrawn +
-            " HTG";
+            wallet.withdrawn + " HTG";
 
     }
 
@@ -1469,22 +2054,38 @@ function showHistory() {
         );
 
 
+    if (!box) {
+
+        return;
+
+    }
+
+
     box.innerHTML = "";
 
 
     if (
+
         !wallet.history ||
+
         !wallet.history.length
+
     ) {
 
         box.innerHTML =
-            "<p class='muted'>Aucune activité.</p>";
+
+            "<p class='muted'>" +
+
+            "Aucune activité." +
+
+            "</p>";
 
     }
 
     else {
 
         wallet.history.forEach(
+
             item => {
 
                 const row =
@@ -1512,15 +2113,20 @@ function showHistory() {
                         <br>
 
                         <small>
+
                             ${escapeHtml(
                                 item.date || ""
                             )}
+
                         </small>
 
                     </span>
 
                     <span class="ranking-score">
-                        ${item.amount || 0} HTG
+
+                        ${item.amount || 0}
+                        HTG
+
                     </span>
 
                 `;
@@ -1529,6 +2135,7 @@ function showHistory() {
                 box.appendChild(row);
 
             }
+
         );
 
     }
@@ -1543,272 +2150,460 @@ function showHistory() {
    PROFIL — OUVRIR
 ===================================================== */
 
-document.getElementById(
-    "btn-profile"
-).onclick = () => {
-
+const btnProfile =
     document.getElementById(
-        "profile-name-input"
-    ).value =
-        localStorage.getItem(
-            "name"
-        ) || "";
-
-
-    document.getElementById(
-        "profile-phone-input"
-    ).value =
-        localStorage.getItem(
-            "phone"
-        ) || "";
-
-
-    document.getElementById(
-        "profile-panel"
-    ).classList.add(
-        "active"
+        "btn-profile"
     );
 
-};
+
+if (btnProfile) {
+
+    btnProfile.onclick = () => {
+
+        const nameInput =
+            document.getElementById(
+                "profile-name-input"
+            );
+
+
+        const phoneInput =
+            document.getElementById(
+                "profile-phone-input"
+            );
+
+
+        if (nameInput) {
+
+            nameInput.value =
+
+                localStorage.getItem(
+                    "name"
+                ) || "";
+
+        }
+
+
+        if (phoneInput) {
+
+            phoneInput.value =
+
+                localStorage.getItem(
+                    "phone"
+                ) || "";
+
+        }
+
+
+        const panel =
+            document.getElementById(
+                "profile-panel"
+            );
+
+
+        if (panel) {
+
+            panel.classList.add(
+                "active"
+            );
+
+        }
+
+    };
+
+}
 
 
 /* =====================================================
    PROFIL — FERMER
 ===================================================== */
 
-document.getElementById(
-    "btn-close-profile"
-).onclick = () => {
-
+const btnCloseProfile =
     document.getElementById(
-        "profile-panel"
-    ).classList.remove(
-        "active"
+        "btn-close-profile"
     );
 
-};
+
+if (btnCloseProfile) {
+
+    btnCloseProfile.onclick = () => {
+
+        const panel =
+            document.getElementById(
+                "profile-panel"
+            );
+
+
+        if (panel) {
+
+            panel.classList.remove(
+                "active"
+            );
+
+        }
+
+    };
+
+}
 
 
 /* =====================================================
    ENREGISTRER PROFIL
 ===================================================== */
 
-document.getElementById(
-    "btn-save-profile"
-).onclick = () => {
-
-    const name =
-        document.getElementById(
-            "profile-name-input"
-        ).value.trim();
-
-
-    const phone =
-        document.getElementById(
-            "profile-phone-input"
-        ).value.trim();
-
-
-    if (name.length < 2) {
-
-        alert(
-            "Entre ton nom."
-        );
-
-        return;
-    }
-
-
-    if (phone.length < 8) {
-
-        alert(
-            "Entre un numéro valide."
-        );
-
-        return;
-    }
-
-
-    localStorage.setItem(
-        "name",
-        name
-    );
-
-
-    localStorage.setItem(
-        "phone",
-        phone
-    );
-
-
-    updateProfile();
-
-
+const btnSaveProfile =
     document.getElementById(
-        "profile-panel"
-    ).classList.remove(
-        "active"
+        "btn-save-profile"
     );
 
 
-    alert(
-        "✅ Profil enregistré."
-    );
+if (btnSaveProfile) {
 
-};
+    btnSaveProfile.onclick = () => {
+
+        const nameInput =
+            document.getElementById(
+                "profile-name-input"
+            );
+
+
+        const phoneInput =
+            document.getElementById(
+                "profile-phone-input"
+            );
+
+
+        const name =
+            nameInput
+                ? nameInput.value.trim()
+                : "";
+
+
+        const phone =
+            phoneInput
+                ? phoneInput.value.trim()
+                : "";
+
+
+        if (name.length < 2) {
+
+            alert(
+                "Entre ton nom."
+            );
+
+            return;
+
+        }
+
+
+        if (phone.length < 8) {
+
+            alert(
+                "Entre un numéro valide."
+            );
+
+            return;
+
+        }
+
+
+        localStorage.setItem(
+            "name",
+            name
+        );
+
+
+        localStorage.setItem(
+            "phone",
+            phone
+        );
+
+
+        updateProfile();
+
+
+        const panel =
+            document.getElementById(
+                "profile-panel"
+            );
+
+
+        if (panel) {
+
+            panel.classList.remove(
+                "active"
+            );
+
+        }
+
+
+        alert(
+            "✅ Profil enregistré."
+        );
+
+    };
+
+}
 
 
 /* =====================================================
    NAVIGATION
 ===================================================== */
 
-document.getElementById(
-    "btn-how-to"
-).onclick = () => {
-
-    screen("how-to");
-
-};
-
-
-document.getElementById(
-    "btn-how-to-back"
-).onclick = () => {
-
-    screen("home");
-
-};
-
-
-document.getElementById(
-    "btn-gains"
-).onclick = () => {
-
-    updateWallet();
-
-    screen("gains");
-
-};
-
-
-document.getElementById(
-    "btn-gains-back"
-).onclick = () => {
-
-    screen("home");
-
-};
-
-
-document.getElementById(
-    "btn-history"
-).onclick =
-    showHistory;
-
-
-document.getElementById(
-    "btn-history-back"
-).onclick = () => {
-
-    screen("home");
-
-};
-
-
-document.getElementById(
-    "btn-ranking-home"
-).onclick = () => {
-
-    screen("home");
-
-};
-
-
-document.getElementById(
-    "btn-result-ranking"
-).onclick =
-    showRanking;
-
-
-document.getElementById(
-    "btn-home"
-).onclick = () => {
-
-    screen("home");
-
-};
-
-
-document.getElementById(
-    "btn-quit"
-).onclick = () => {
-
-    clearInterval(
-        state.timer
+const btnHowTo =
+    document.getElementById(
+        "btn-how-to"
     );
 
-    screen("home");
 
-};
+if (btnHowTo) {
+
+    btnHowTo.onclick = () => {
+
+        screen("how-to");
+
+    };
+
+}
 
 
-document.getElementById(
-    "btn-replay"
-).onclick = () => {
-
-    startQuiz(
-        state.category
+const btnHowToBack =
+    document.getElementById(
+        "btn-how-to-back"
     );
 
-};
+
+if (btnHowToBack) {
+
+    btnHowToBack.onclick = () => {
+
+        screen("home");
+
+    };
+
+}
+
+
+const btnGains =
+    document.getElementById(
+        "btn-gains"
+    );
+
+
+if (btnGains) {
+
+    btnGains.onclick = () => {
+
+        updateWallet();
+
+        screen("gains");
+
+    };
+
+}
+
+
+const btnGainsBack =
+    document.getElementById(
+        "btn-gains-back"
+    );
+
+
+if (btnGainsBack) {
+
+    btnGainsBack.onclick = () => {
+
+        screen("home");
+
+    };
+
+}
+
+
+const btnHistory =
+    document.getElementById(
+        "btn-history"
+    );
+
+
+if (btnHistory) {
+
+    btnHistory.onclick =
+        showHistory;
+
+}
+
+
+const btnHistoryBack =
+    document.getElementById(
+        "btn-history-back"
+    );
+
+
+if (btnHistoryBack) {
+
+    btnHistoryBack.onclick = () => {
+
+        screen("home");
+
+    };
+
+}
+
+
+const btnRankingHome =
+    document.getElementById(
+        "btn-ranking-home"
+    );
+
+
+if (btnRankingHome) {
+
+    btnRankingHome.onclick = () => {
+
+        showRanking();
+
+    };
+
+}
+
+
+const btnResultRanking =
+    document.getElementById(
+        "btn-result-ranking"
+    );
+
+
+if (btnResultRanking) {
+
+    btnResultRanking.onclick =
+        showRanking;
+
+}
+
+
+const btnHome =
+    document.getElementById(
+        "btn-home"
+    );
+
+
+if (btnHome) {
+
+    btnHome.onclick = () => {
+
+        screen("home");
+
+    };
+
+}
+
+
+const btnQuit =
+    document.getElementById(
+        "btn-quit"
+    );
+
+
+if (btnQuit) {
+
+    btnQuit.onclick = () => {
+
+        clearInterval(
+            state.timer
+        );
+
+        screen("home");
+
+    };
+
+}
+
+
+const btnReplay =
+    document.getElementById(
+        "btn-replay"
+    );
+
+
+if (btnReplay) {
+
+    btnReplay.onclick = () => {
+
+        startQuiz(
+            state.category
+        );
+
+    };
+
+}
 
 
 /* =====================================================
    RETRAIT
 ===================================================== */
 
-document.getElementById(
-    "btn-withdraw"
-).onclick = () => {
-
-    const phone =
-        localStorage.getItem(
-            "phone"
-        );
+const btnWithdraw =
+    document.getElementById(
+        "btn-withdraw"
+    );
 
 
-    const wallet =
-        getWallet();
+if (btnWithdraw) {
+
+    btnWithdraw.onclick = () => {
+
+        const phone =
+            localStorage.getItem(
+                "phone"
+            );
 
 
-    const status =
-        document.getElementById(
-            "withdraw-status"
-        );
+        const wallet =
+            getWallet();
 
 
-    if (!phone) {
+        const status =
+            document.getElementById(
+                "withdraw-status"
+            );
+
+
+        if (!status) {
+
+            return;
+
+        }
+
+
+        if (!phone) {
+
+            status.textContent =
+
+                "⚠️ Enregistre ton numéro dans ton profil.";
+
+            return;
+
+        }
+
+
+        if (wallet.balance <= 0) {
+
+            status.textContent =
+
+                "⚠️ Ton solde est de 0 HTG.";
+
+            return;
+
+        }
+
 
         status.textContent =
-            "⚠️ Enregistre ton numéro dans ton profil.";
 
-        return;
-    }
+            "⚠️ Le retrait réel n'est pas encore connecté.";
 
+    };
 
-    if (wallet.balance <= 0) {
-
-        status.textContent =
-            "⚠️ Ton solde est de 0 HTG.";
-
-        return;
-    }
-
-
-    status.textContent =
-        "⚠️ Le retrait réel n'est pas encore connecté.";
-
-};
+}
 
 
 /* =====================================================
@@ -1823,24 +2618,51 @@ updateProfile();
 
 updateWallet();
 
+
+/* =====================================================
+   COMPTEUR DES TICKETS
+===================================================== */
+
 setInterval(
+
     ticketTimer,
+
     1000
+
 );
 
 
 /* =====================================================
-   TEST DE CONNEXION SERVEUR
+   TEST DU SERVEUR RENDER
 ===================================================== */
 
 async function testServer() {
 
     try {
 
+        console.log(
+            "🔄 Connexion au serveur..."
+        );
+
+
         const response =
+
             await fetch(
-                `${API_URL}/api`
+
+                `${API_URL}/api?t=${Date.now()}`
+
             );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+
+                `HTTP ${response.status}`
+
+            );
+
+        }
 
 
         const data =
@@ -1848,8 +2670,11 @@ async function testServer() {
 
 
         console.log(
+
             "🟢 Serveur Konkou connecté :",
+
             data
+
         );
 
     }
@@ -1857,8 +2682,11 @@ async function testServer() {
     catch (error) {
 
         console.error(
+
             "🔴 Serveur Konkou inaccessible :",
+
             error
+
         );
 
     }
@@ -1867,3 +2695,8 @@ async function testServer() {
 
 
 testServer();
+
+
+/* =====================================================
+   FIN APP.JS
+===================================================== */
