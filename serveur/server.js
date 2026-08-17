@@ -1,186 +1,468 @@
 const express = require("express");
 const cors = require("cors");
-const path = require("path");
 
 const app = express();
 
 const PORT = process.env.PORT || 3000;
 
-// =========================
-// CONFIGURATION
-// =========================
+/* =====================================================
+   CONFIGURATION
+===================================================== */
 
-app.use(cors());
+app.use(cors({
+    origin: "*",
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type"]
+}));
+
 app.use(express.json());
 
-// Permet de servir le site depuis le dossier principal
-app.use(express.static(path.join(__dirname, "..")));
-
-// =========================
-// DONNÉES TEMPORAIRES
-// =========================
+/* =====================================================
+   DONNÉES DES JOUEURS
+===================================================== */
 
 let players = [];
 
-// =========================
-// PAGE PRINCIPALE
-// =========================
+/* =====================================================
+   TEST SERVEUR
+===================================================== */
 
 app.get("/", (req, res) => {
-    res.sendFile(
-        path.join(__dirname, "..", "index.html")
-    );
-});
 
-// =========================
-// TEST DU SERVEUR
-// =========================
-
-app.get("/api", (req, res) => {
     res.json({
         success: true,
-        message: "🏆 Serveur Konkou fonctionne !"
+        message: "🏆 Serveur Konkou fonctionne !",
+        players: players.length
     });
+
 });
 
-// =========================
-// AJOUTER UN JOUEUR / SCORE
-// =========================
+/* =====================================================
+   API
+===================================================== */
+
+app.get("/api", (req, res) => {
+
+    res.json({
+        success: true,
+        message: "🏆 Serveur Konkou fonctionne !",
+        players: players.length
+    });
+
+});
+
+/* =====================================================
+   AJOUTER UN SCORE
+===================================================== */
 
 app.post("/api/players", (req, res) => {
 
-    const { name, score } = req.body;
+    try {
 
-    if (!name || typeof name !== "string") {
-        return res.status(400).json({
-            success: false,
-            message: "Le nom est obligatoire."
-        });
-    }
+        const { name, score } = req.body;
 
-    const cleanName = name.trim();
+        /* Vérification du nom */
 
-    let player = players.find(
-        p => p.name.toLowerCase() === cleanName.toLowerCase()
-    );
+        if (
+            !name ||
+            typeof name !== "string" ||
+            name.trim().length < 2
+        ) {
 
-    if (!player) {
+            return res.status(400).json({
+                success: false,
+                message: "Le nom est obligatoire."
+            });
 
-        player = {
-            id: players.length + 1,
-            name: cleanName,
-            score: 0,
-            games: 0
-        };
+        }
 
-        players.push(player);
-    }
+        /* Vérification du score */
 
-    if (
-        typeof score === "number" &&
-        Number.isFinite(score) &&
-        score >= 0
-    ) {
+        if (
+            typeof score !== "number" ||
+            !Number.isFinite(score) ||
+            score < 0
+        ) {
+
+            return res.status(400).json({
+                success: false,
+                message: "Score invalide."
+            });
+
+        }
+
+        const cleanName =
+            name.trim();
+
+        /* Chercher le joueur */
+
+        let player =
+            players.find(
+                p =>
+                    p.name.toLowerCase() ===
+                    cleanName.toLowerCase()
+            );
+
+        /* Nouveau joueur */
+
+        if (!player) {
+
+            player = {
+
+                id:
+                    players.length > 0
+                        ? Math.max(
+                            ...players.map(
+                                p => p.id
+                            )
+                        ) + 1
+                        : 1,
+
+                name: cleanName,
+
+                score: 0,
+
+                games: 0
+
+            };
+
+            players.push(player);
+
+        }
+
+        /* Ajouter le score */
+
         player.score += score;
-        player.games++;
+
+        player.games += 1;
+
+        /* Classement actuel */
+
+        const ranking =
+            [...players]
+                .sort(
+                    (a, b) =>
+                        b.score - a.score
+                )
+                .map(
+                    (p, index) => ({
+
+                        rank:
+                            index + 1,
+
+                        id:
+                            p.id,
+
+                        name:
+                            p.name,
+
+                        score:
+                            p.score,
+
+                        games:
+                            p.games
+
+                    })
+                );
+
+        console.log(
+            `🏆 ${player.name} +${score} points → ${player.score} points`
+        );
+
+        res.json({
+
+            success: true,
+
+            message:
+                "Score enregistré.",
+
+            player: {
+
+                id:
+                    player.id,
+
+                name:
+                    player.name,
+
+                score:
+                    player.score,
+
+                games:
+                    player.games
+
+            },
+
+            ranking
+
+        });
+
     }
 
-    res.json({
-        success: true,
-        player
-    });
+    catch (error) {
+
+        console.error(
+            "❌ Erreur /api/players :",
+            error
+        );
+
+        res.status(500).json({
+
+            success: false,
+
+            message:
+                "Erreur interne du serveur."
+
+        });
+
+    }
+
 });
 
-// =========================
-// CLASSEMENT
-// =========================
+/* =====================================================
+   CLASSEMENT
+===================================================== */
 
 app.get("/api/ranking", (req, res) => {
 
-    const ranking = [...players]
-        .sort((a, b) => b.score - a.score)
-        .map((player, index) => ({
-            rank: index + 1,
-            id: player.id,
-            name: player.name,
-            score: player.score,
-            games: player.games
-        }));
+    try {
 
-    res.json({
-        success: true,
-        ranking
-    });
-});
+        const ranking =
+            [...players]
+                .sort(
+                    (a, b) =>
+                        b.score - a.score
+                )
+                .map(
+                    (player, index) => ({
 
-// =========================
-// RECHERCHER UN JOUEUR
-// =========================
+                        rank:
+                            index + 1,
 
-app.get("/api/players/:name", (req, res) => {
+                        id:
+                            player.id,
 
-    const name = decodeURIComponent(
-        req.params.name
-    ).trim().toLowerCase();
+                        name:
+                            player.name,
 
-    const player = players.find(
-        p => p.name.toLowerCase() === name
-    );
+                        score:
+                            player.score,
 
-    if (!player) {
-        return res.status(404).json({
-            success: false,
-            message: "Joueur introuvable."
+                        games:
+                            player.games
+
+                    })
+                );
+
+        res.json({
+
+            success: true,
+
+            ranking
+
         });
+
     }
 
-    res.json({
-        success: true,
-        player
-    });
+    catch (error) {
+
+        console.error(
+            "❌ Erreur classement :",
+            error
+        );
+
+        res.status(500).json({
+
+            success: false,
+
+            message:
+                "Impossible de récupérer le classement."
+
+        });
+
+    }
+
 });
 
-// =========================
-// SANTÉ DU SERVEUR
-// =========================
+/* =====================================================
+   RECHERCHER UN JOUEUR
+===================================================== */
+
+app.get(
+    "/api/players/:name",
+    (req, res) => {
+
+        try {
+
+            const name =
+                decodeURIComponent(
+                    req.params.name
+                )
+                .trim()
+                .toLowerCase();
+
+            const player =
+                players.find(
+                    p =>
+                        p.name.toLowerCase() ===
+                        name
+                );
+
+            if (!player) {
+
+                return res.status(404).json({
+
+                    success: false,
+
+                    message:
+                        "Joueur introuvable."
+
+                });
+
+            }
+
+            const ranking =
+                [...players]
+                    .sort(
+                        (a, b) =>
+                            b.score - a.score
+                    );
+
+            const position =
+                ranking.findIndex(
+                    p =>
+                        p.id === player.id
+                ) + 1;
+
+            res.json({
+
+                success: true,
+
+                player: {
+
+                    id:
+                        player.id,
+
+                    name:
+                        player.name,
+
+                    score:
+                        player.score,
+
+                    games:
+                        player.games,
+
+                    rank:
+                        position
+
+                }
+
+            });
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "❌ Erreur recherche joueur :",
+                error
+            );
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Erreur interne."
+
+            });
+
+        }
+
+    }
+);
+
+/* =====================================================
+   SANTÉ DU SERVEUR
+===================================================== */
 
 app.get("/api/health", (req, res) => {
 
     res.json({
+
         success: true,
+
         status: "online",
+
         service: "Konkou",
-        time: new Date().toISOString()
+
+        players:
+            players.length,
+
+        time:
+            new Date().toISOString()
+
     });
-});
-
-// =========================
-// ERREUR 404 API
-// =========================
-
-app.use("/api", (req, res) => {
-
-    res.status(404).json({
-        success: false,
-        message: "Route API introuvable."
-    });
-});
-
-// =========================
-// DÉMARRAGE
-// =========================
-
-app.listen(PORT, "0.0.0.0", () => {
-
-    console.log("");
-    console.log("=================================");
-    console.log("🏆 KONKOU");
-    console.log("=================================");
-    console.log(`Serveur démarré sur le port ${PORT}`);
-    console.log("API : /api");
-    console.log("Classement : /api/ranking");
-    console.log("Santé : /api/health");
-    console.log("=================================");
-    console.log("");
 
 });
+
+/* =====================================================
+   404 API
+===================================================== */
+
+app.use(
+    "/api",
+    (req, res) => {
+
+        res.status(404).json({
+
+            success: false,
+
+            message:
+                "Route API introuvable."
+
+        });
+
+    }
+);
+
+/* =====================================================
+   DÉMARRAGE
+===================================================== */
+
+app.listen(
+    PORT,
+    "0.0.0.0",
+    () => {
+
+        console.log("");
+        console.log(
+            "================================="
+        );
+        console.log(
+            "🏆 KONKOU SERVER"
+        );
+        console.log(
+            "================================="
+        );
+        console.log(
+            `🚀 Port : ${PORT}`
+        );
+        console.log(
+            "🌐 API : /api"
+        );
+        console.log(
+            "🏆 Classement : /api/ranking"
+        );
+        console.log(
+            "❤️ Santé : /api/health"
+        );
+        console.log(
+            "👥 Joueurs : 0"
+        );
+        console.log(
+            "================================="
+        );
+        console.log("");
+
+    }
+);
