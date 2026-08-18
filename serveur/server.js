@@ -9,6 +9,17 @@ const PORT = process.env.PORT || 3000;
    CONFIGURATION
 ===================================================== */
 
+const REGISTRATION_FEE = 50;
+
+const WINNER_PERCENTAGE = 0.70;
+
+const PLATFORM_PERCENTAGE = 0.30;
+
+
+/* =====================================================
+   MIDDLEWARE
+===================================================== */
+
 app.use(cors({
     origin: "*",
     methods: ["GET", "POST", "DELETE", "OPTIONS"],
@@ -26,15 +37,182 @@ let players = [];
 
 
 /* =====================================================
-   TEST SERVEUR
+   CAGNOTTE
+===================================================== */
+
+let contest = {
+
+    registrations: 0,
+
+    prizePool: 0,
+
+    winner: null,
+
+    winnerPrize: 0,
+
+    platformShare: 0,
+
+    status: "open"
+
+};
+
+
+/* =====================================================
+   OUTILS
+===================================================== */
+
+function findPlayerByName(name) {
+
+    return players.find(
+
+        player =>
+            player.name.toLowerCase() ===
+            name.trim().toLowerCase()
+
+    );
+
+}
+
+
+/* =====================================================
+   CLASSEMENT
+===================================================== */
+
+function getRanking() {
+
+    return [...players]
+
+        .sort((a, b) => {
+
+            if (b.score !== a.score) {
+
+                return b.score - a.score;
+
+            }
+
+            return a.id - b.id;
+
+        })
+
+        .map((player, index) => ({
+
+            rank: index + 1,
+
+            id: player.id,
+
+            name: player.name,
+
+            score: player.score,
+
+            games: player.games,
+
+            registered: player.registered,
+
+            winnings: player.winnings || 0
+
+        }));
+
+}
+
+
+/* =====================================================
+   CALCUL DU GAGNANT
+===================================================== */
+
+function updateWinner() {
+
+    const ranking = getRanking();
+
+
+    if (ranking.length === 0) {
+
+        contest.winner = null;
+
+        contest.winnerPrize = 0;
+
+        contest.platformShare = 0;
+
+        return;
+
+    }
+
+
+    const first = ranking[0];
+
+
+    const winner = players.find(
+
+        player =>
+            player.id === first.id
+
+    );
+
+
+    if (!winner) {
+
+        return;
+
+    }
+
+
+    const winnerPrize = Math.floor(
+
+        contest.prizePool *
+        WINNER_PERCENTAGE
+
+    );
+
+
+    contest.winner = winner.name;
+
+    contest.winnerPrize = winnerPrize;
+
+    contest.platformShare =
+
+        contest.prizePool -
+        winnerPrize;
+
+
+    players.forEach(player => {
+
+        player.winnings = 0;
+
+    });
+
+
+    winner.winnings = winnerPrize;
+
+}
+
+
+/* =====================================================
+   TEST DU SERVEUR
 ===================================================== */
 
 app.get("/", (req, res) => {
 
     res.json({
+
         success: true,
-        message: "🏆 Serveur Konkou fonctionne !",
-        players: players.length
+
+        message:
+            "🏆 Serveur Konkou fonctionne !",
+
+        players:
+            players.length,
+
+        registrations:
+            contest.registrations,
+
+        prizePool:
+            contest.prizePool,
+
+        winnerPercentage:
+            "70%",
+
+        status:
+            contest.status
+
     });
 
 });
@@ -47,10 +225,258 @@ app.get("/", (req, res) => {
 app.get("/api", (req, res) => {
 
     res.json({
+
         success: true,
-        message: "🏆 Serveur Konkou fonctionne !",
-        players: players.length
+
+        message:
+            "🏆 Serveur Konkou fonctionne !",
+
+        players:
+            players.length,
+
+        registrations:
+            contest.registrations,
+
+        prizePool:
+            contest.prizePool,
+
+        winnerPercentage:
+            "70%",
+
+        status:
+            contest.status
+
     });
+
+});
+
+
+/* =====================================================
+   INSCRIPTION
+===================================================== */
+
+app.post("/api/register", (req, res) => {
+
+    try {
+
+        const { name } = req.body;
+
+
+        if (
+            !name ||
+            typeof name !== "string" ||
+            name.trim().length < 2
+        ) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Le nom est obligatoire."
+
+            });
+
+        }
+
+
+        const cleanName =
+            name.trim();
+
+
+        let player =
+            findPlayerByName(cleanName);
+
+
+        /* Joueur déjà inscrit */
+
+        if (
+            player &&
+            player.registered
+        ) {
+
+            return res.json({
+
+                success: true,
+
+                message:
+                    "Joueur déjà inscrit.",
+
+                alreadyRegistered:
+                    true,
+
+                player: {
+
+                    id:
+                        player.id,
+
+                    name:
+                        player.name,
+
+                    registered:
+                        true
+
+                },
+
+                contest: {
+
+                    registrations:
+                        contest.registrations,
+
+                    prizePool:
+                        contest.prizePool,
+
+                    winnerPrize:
+                        Math.floor(
+                            contest.prizePool *
+                            WINNER_PERCENTAGE
+                        )
+
+                }
+
+            });
+
+        }
+
+
+        /* Créer le joueur */
+
+        if (!player) {
+
+            player = {
+
+                id:
+
+                    players.length > 0
+
+                        ? Math.max(
+                            ...players.map(
+                                p => p.id
+                            )
+                        ) + 1
+
+                        : 1,
+
+                name:
+                    cleanName,
+
+                score:
+                    0,
+
+                games:
+                    0,
+
+                registered:
+                    false,
+
+                registrationPaid:
+                    0,
+
+                winnings:
+                    0
+
+            };
+
+
+            players.push(player);
+
+        }
+
+
+        /* Inscription */
+
+        player.registered = true;
+
+        player.registrationPaid =
+            REGISTRATION_FEE;
+
+
+        /* Ajouter à la cagnotte */
+
+        contest.registrations += 1;
+
+        contest.prizePool +=
+            REGISTRATION_FEE;
+
+
+        updateWinner();
+
+
+        console.log(
+
+            `🎟️ ${player.name} inscrit` +
+
+            ` → +${REGISTRATION_FEE} HTG` +
+
+            ` | Cagnotte : ${contest.prizePool} HTG`
+
+        );
+
+
+        res.json({
+
+            success: true,
+
+            message:
+                "Inscription enregistrée.",
+
+            player: {
+
+                id:
+                    player.id,
+
+                name:
+                    player.name,
+
+                registered:
+                    true
+
+            },
+
+            contest: {
+
+                registrations:
+                    contest.registrations,
+
+                registrationFee:
+                    REGISTRATION_FEE,
+
+                prizePool:
+                    contest.prizePool,
+
+                winner:
+                    contest.winner,
+
+                winnerPrize:
+                    contest.winnerPrize,
+
+                platformShare:
+                    contest.platformShare
+
+            }
+
+        });
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "❌ Erreur /api/register :",
+            error
+        );
+
+
+        res.status(500).json({
+
+            success: false,
+
+            message:
+                "Erreur interne du serveur."
+
+        });
+
+    }
 
 });
 
@@ -63,7 +489,8 @@ app.post("/api/players", (req, res) => {
 
     try {
 
-        const { name, score } = req.body;
+        const { name, score } =
+            req.body;
 
 
         /* Vérification du nom */
@@ -75,8 +502,12 @@ app.post("/api/players", (req, res) => {
         ) {
 
             return res.status(400).json({
+
                 success: false,
-                message: "Le nom est obligatoire."
+
+                message:
+                    "Le nom est obligatoire."
+
             });
 
         }
@@ -91,8 +522,12 @@ app.post("/api/players", (req, res) => {
         ) {
 
             return res.status(400).json({
+
                 success: false,
-                message: "Score invalide."
+
+                message:
+                    "Score invalide."
+
             });
 
         }
@@ -102,40 +537,66 @@ app.post("/api/players", (req, res) => {
             name.trim();
 
 
-        /* Chercher le joueur */
-
         let player =
-            players.find(
-                p =>
-                    p.name.toLowerCase() ===
-                    cleanName.toLowerCase()
-            );
+            findPlayerByName(cleanName);
 
 
-        /* Nouveau joueur */
+        /* Créer le joueur */
 
         if (!player) {
 
             player = {
 
                 id:
+
                     players.length > 0
+
                         ? Math.max(
                             ...players.map(
                                 p => p.id
                             )
                         ) + 1
+
                         : 1,
 
-                name: cleanName,
+                name:
+                    cleanName,
 
-                score: 0,
+                score:
+                    0,
 
-                games: 0
+                games:
+                    0,
+
+                registered:
+                    false,
+
+                registrationPaid:
+                    0,
+
+                winnings:
+                    0
 
             };
 
+
             players.push(player);
+
+        }
+
+
+        /* Vérifier inscription */
+
+        if (!player.registered) {
+
+            return res.status(403).json({
+
+                success: false,
+
+                message:
+                    "Le joueur doit être inscrit au concours."
+
+            });
 
         }
 
@@ -147,39 +608,22 @@ app.post("/api/players", (req, res) => {
         player.games += 1;
 
 
-        console.log(
-            `🏆 ${player.name} +${score} points → ${player.score} points`
-        );
+        updateWinner();
 
-
-        /* Classement actuel */
 
         const ranking =
-            [...players]
-                .sort(
-                    (a, b) =>
-                        b.score - a.score
-                )
-                .map(
-                    (p, index) => ({
+            getRanking();
 
-                        rank:
-                            index + 1,
 
-                        id:
-                            p.id,
+        console.log(
 
-                        name:
-                            p.name,
+            `🏆 ${player.name}` +
 
-                        score:
-                            p.score,
+            ` +${score} points` +
 
-                        games:
-                            p.games
+            ` → ${player.score} points`
 
-                    })
-                );
+        );
 
 
         res.json({
@@ -201,11 +645,35 @@ app.post("/api/players", (req, res) => {
                     player.score,
 
                 games:
-                    player.games
+                    player.games,
+
+                winnings:
+                    player.winnings || 0
 
             },
 
-            ranking
+            ranking:
+
+                ranking,
+
+            contest: {
+
+                registrations:
+                    contest.registrations,
+
+                prizePool:
+                    contest.prizePool,
+
+                winner:
+                    contest.winner,
+
+                winnerPrize:
+                    contest.winnerPrize,
+
+                platformShare:
+                    contest.platformShare
+
+            }
 
         });
 
@@ -217,6 +685,7 @@ app.post("/api/players", (req, res) => {
             "❌ Erreur /api/players :",
             error
         );
+
 
         res.status(500).json({
 
@@ -233,7 +702,7 @@ app.post("/api/players", (req, res) => {
 
 
 /* =====================================================
-   LISTE DE TOUS LES JOUEURS
+   LISTE DES JOUEURS
 ===================================================== */
 
 app.get("/api/players", (req, res) => {
@@ -245,6 +714,7 @@ app.get("/api/players", (req, res) => {
             success: true,
 
             players:
+
                 players.map(player => ({
 
                     id:
@@ -257,7 +727,13 @@ app.get("/api/players", (req, res) => {
                         player.score,
 
                     games:
-                        player.games
+                        player.games,
+
+                    registered:
+                        player.registered,
+
+                    winnings:
+                        player.winnings || 0
 
                 }))
 
@@ -268,9 +744,10 @@ app.get("/api/players", (req, res) => {
     catch (error) {
 
         console.error(
-            "❌ Erreur récupération joueurs :",
+            "❌ Erreur /api/players :",
             error
         );
+
 
         res.status(500).json({
 
@@ -294,39 +771,43 @@ app.get("/api/ranking", (req, res) => {
 
     try {
 
-        const ranking =
-            [...players]
-                .sort(
-                    (a, b) =>
-                        b.score - a.score
-                )
-                .map(
-                    (player, index) => ({
-
-                        rank:
-                            index + 1,
-
-                        id:
-                            player.id,
-
-                        name:
-                            player.name,
-
-                        score:
-                            player.score,
-
-                        games:
-                            player.games
-
-                    })
-                );
+        updateWinner();
 
 
         res.json({
 
             success: true,
 
-            ranking
+            ranking:
+                getRanking(),
+
+            contest: {
+
+                registrations:
+                    contest.registrations,
+
+                registrationFee:
+                    REGISTRATION_FEE,
+
+                prizePool:
+                    contest.prizePool,
+
+                winner:
+                    contest.winner,
+
+                winnerPrize:
+                    contest.winnerPrize,
+
+                winnerPercentage:
+                    WINNER_PERCENTAGE * 100,
+
+                platformShare:
+                    contest.platformShare,
+
+                platformPercentage:
+                    PLATFORM_PERCENTAGE * 100
+
+            }
 
         });
 
@@ -338,6 +819,7 @@ app.get("/api/ranking", (req, res) => {
             "❌ Erreur classement :",
             error
         );
+
 
         res.status(500).json({
 
@@ -354,6 +836,55 @@ app.get("/api/ranking", (req, res) => {
 
 
 /* =====================================================
+   INFORMATIONS CONCOURS
+===================================================== */
+
+app.get("/api/contest", (req, res) => {
+
+    updateWinner();
+
+
+    res.json({
+
+        success: true,
+
+        contest: {
+
+            status:
+                contest.status,
+
+            registrations:
+                contest.registrations,
+
+            registrationFee:
+                REGISTRATION_FEE,
+
+            prizePool:
+                contest.prizePool,
+
+            winner:
+                contest.winner,
+
+            winnerPercentage:
+                WINNER_PERCENTAGE * 100,
+
+            winnerPrize:
+                contest.winnerPrize,
+
+            platformPercentage:
+                PLATFORM_PERCENTAGE * 100,
+
+            platformShare:
+                contest.platformShare
+
+        }
+
+    });
+
+});
+
+
+/* =====================================================
    RECHERCHER UN JOUEUR
 ===================================================== */
 
@@ -364,18 +895,21 @@ app.get(
         try {
 
             const name =
+
                 decodeURIComponent(
                     req.params.name
                 )
-                .trim()
-                .toLowerCase();
+                    .trim()
+                    .toLowerCase();
 
 
             const player =
                 players.find(
+
                     p =>
                         p.name.toLowerCase() ===
                         name
+
                 );
 
 
@@ -393,18 +927,21 @@ app.get(
             }
 
 
+            updateWinner();
+
+
             const ranking =
-                [...players]
-                    .sort(
-                        (a, b) =>
-                            b.score - a.score
-                    );
+                getRanking();
 
 
             const position =
+
                 ranking.findIndex(
+
                     p =>
-                        p.id === player.id
+                        p.id ===
+                        player.id
+
                 ) + 1;
 
 
@@ -427,7 +964,13 @@ app.get(
                         player.games,
 
                     rank:
-                        position
+                        position,
+
+                    registered:
+                        player.registered,
+
+                    winnings:
+                        player.winnings || 0
 
                 }
 
@@ -442,6 +985,7 @@ app.get(
                 error
             );
 
+
             res.status(500).json({
 
                 success: false,
@@ -454,6 +998,7 @@ app.get(
         }
 
     }
+
 );
 
 
@@ -461,42 +1006,72 @@ app.get(
    SANTÉ DU SERVEUR
 ===================================================== */
 
-app.get("/api/health", (req, res) => {
+app.get(
+    "/api/health",
+    (req, res) => {
 
-    res.json({
+        res.json({
 
-        success: true,
+            success: true,
 
-        status: "online",
+            status:
+                "online",
 
-        service: "Konkou",
+            service:
+                "Konkou",
 
-        players:
-            players.length,
+            players:
+                players.length,
 
-        time:
-            new Date().toISOString()
+            registrations:
+                contest.registrations,
 
-    });
+            prizePool:
+                contest.prizePool,
 
-});
+            time:
+                new Date().toISOString()
+
+        });
+
+    }
+
+);
 
 
 /* =====================================================
-   SUPPRIMER TOUS LES JOUEURS
-   POUR TEST UNIQUEMENT
+   RÉINITIALISER LE CLASSEMENT
+   TEST UNIQUEMENT
 ===================================================== */
 
 app.delete("/api/players", (req, res) => {
 
     players = [];
 
+
+    contest = {
+
+        registrations: 0,
+
+        prizePool: 0,
+
+        winner: null,
+
+        winnerPrize: 0,
+
+        platformShare: 0,
+
+        status: "open"
+
+    };
+
+
     res.json({
 
         success: true,
 
         message:
-            "Classement réinitialisé."
+            "Classement et concours réinitialisés."
 
     });
 
@@ -536,6 +1111,7 @@ app.use(
             err
         );
 
+
         res.status(500).json({
 
             success: false,
@@ -554,11 +1130,15 @@ app.use(
 ===================================================== */
 
 app.listen(
+
     PORT,
+
     "0.0.0.0",
+
     () => {
 
         console.log("");
+
         console.log(
             "================================="
         );
@@ -580,6 +1160,10 @@ app.listen(
         );
 
         console.log(
+            "🎟️ Inscription : /api/register"
+        );
+
+        console.log(
             "👥 Joueurs : /api/players"
         );
 
@@ -588,11 +1172,19 @@ app.listen(
         );
 
         console.log(
+            "💰 Concours : /api/contest"
+        );
+
+        console.log(
             "❤️ Santé : /api/health"
         );
 
         console.log(
-            `👥 Joueurs actuels : ${players.length}`
+            "🥇 Gagnant : 70 %"
+        );
+
+        console.log(
+            "🏦 Plateforme : 30 %"
         );
 
         console.log(
@@ -606,4 +1198,5 @@ app.listen(
         );
 
     }
+
 );
