@@ -20,11 +20,13 @@ const PLATFORM_PERCENTAGE = 0.30;
    MIDDLEWARE
 ===================================================== */
 
-app.use(cors({
-    origin: "*",
-    methods: ["GET", "POST", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type"]
-}));
+app.use(
+    cors({
+        origin: "*",
+        methods: ["GET", "POST", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type"]
+    })
+);
 
 app.use(express.json());
 
@@ -137,15 +139,45 @@ function updateWinner() {
     }
 
 
-    const first = ranking[0];
+    /*
+     * On cherche uniquement les joueurs
+     * réellement inscrits au concours.
+     */
+
+    const registeredPlayers =
+        ranking.filter(
+            player => player.registered
+        );
 
 
-    const winner = players.find(
+    if (registeredPlayers.length === 0) {
 
-        player =>
-            player.id === first.id
+        contest.winner = null;
 
-    );
+        contest.winnerPrize = 0;
+
+        contest.platformShare = 0;
+
+        players.forEach(player => {
+
+            player.winnings = 0;
+
+        });
+
+        return;
+
+    }
+
+
+    const first =
+        registeredPlayers[0];
+
+
+    const winner =
+        players.find(
+            player =>
+                player.id === first.id
+        );
 
 
     if (!winner) {
@@ -155,20 +187,22 @@ function updateWinner() {
     }
 
 
-    const winnerPrize = Math.floor(
+    const winnerPrize =
+        Math.floor(
+            contest.prizePool *
+            WINNER_PERCENTAGE
+        );
 
-        contest.prizePool *
-        WINNER_PERCENTAGE
 
-    );
+    contest.winner =
+        winner.name;
 
 
-    contest.winner = winner.name;
+    contest.winnerPrize =
+        winnerPrize;
 
-    contest.winnerPrize = winnerPrize;
 
     contest.platformShare =
-
         contest.prizePool -
         winnerPrize;
 
@@ -180,7 +214,8 @@ function updateWinner() {
     });
 
 
-    winner.winnings = winnerPrize;
+    winner.winnings =
+        winnerPrize;
 
 }
 
@@ -252,14 +287,15 @@ app.get("/api", (req, res) => {
 
 
 /* =====================================================
-   INSCRIPTION
+   INSCRIPTION AU CONCOURS
 ===================================================== */
 
 app.post("/api/register", (req, res) => {
 
     try {
 
-        const { name } = req.body;
+        const { name } =
+            req.body;
 
 
         if (
@@ -288,7 +324,9 @@ app.post("/api/register", (req, res) => {
             findPlayerByName(cleanName);
 
 
-        /* Joueur déjà inscrit */
+        /* =========================
+           JOUEUR DÉJÀ INSCRIT
+        ========================= */
 
         if (
             player &&
@@ -313,6 +351,12 @@ app.post("/api/register", (req, res) => {
                     name:
                         player.name,
 
+                    score:
+                        player.score,
+
+                    games:
+                        player.games,
+
                     registered:
                         true
 
@@ -323,14 +367,20 @@ app.post("/api/register", (req, res) => {
                     registrations:
                         contest.registrations,
 
+                    registrationFee:
+                        REGISTRATION_FEE,
+
                     prizePool:
                         contest.prizePool,
 
+                    winner:
+                        contest.winner,
+
                     winnerPrize:
-                        Math.floor(
-                            contest.prizePool *
-                            WINNER_PERCENTAGE
-                        )
+                        contest.winnerPrize,
+
+                    platformShare:
+                        contest.platformShare
 
                 }
 
@@ -339,7 +389,9 @@ app.post("/api/register", (req, res) => {
         }
 
 
-        /* Créer le joueur */
+        /* =========================
+           CRÉER LE JOUEUR
+        ========================= */
 
         if (!player) {
 
@@ -383,17 +435,21 @@ app.post("/api/register", (req, res) => {
         }
 
 
-        /* Inscription */
+        /* =========================
+           INSCRIPTION
+        ========================= */
 
-        player.registered = true;
+        player.registered =
+            true;
+
 
         player.registrationPaid =
             REGISTRATION_FEE;
 
 
-        /* Ajouter à la cagnotte */
+        contest.registrations +=
+            1;
 
-        contest.registrations += 1;
 
         contest.prizePool +=
             REGISTRATION_FEE;
@@ -405,9 +461,7 @@ app.post("/api/register", (req, res) => {
         console.log(
 
             `🎟️ ${player.name} inscrit` +
-
             ` → +${REGISTRATION_FEE} HTG` +
-
             ` | Cagnotte : ${contest.prizePool} HTG`
 
         );
@@ -427,6 +481,12 @@ app.post("/api/register", (req, res) => {
 
                 name:
                     player.name,
+
+                score:
+                    player.score,
+
+                games:
+                    player.games,
 
                 registered:
                     true
@@ -493,7 +553,9 @@ app.post("/api/players", (req, res) => {
             req.body;
 
 
-        /* Vérification du nom */
+        /* =========================
+           VÉRIFICATION DU NOM
+        ========================= */
 
         if (
             !name ||
@@ -513,7 +575,9 @@ app.post("/api/players", (req, res) => {
         }
 
 
-        /* Vérification du score */
+        /* =========================
+           VÉRIFICATION DU SCORE
+        ========================= */
 
         if (
             typeof score !== "number" ||
@@ -537,55 +601,35 @@ app.post("/api/players", (req, res) => {
             name.trim();
 
 
-        let player =
+        /* =========================
+           CHERCHER LE JOUEUR
+        ========================= */
+
+        const player =
             findPlayerByName(cleanName);
 
 
-        /* Créer le joueur */
+        /* =========================
+           JOUEUR INTROUVABLE
+        ========================= */
 
         if (!player) {
 
-            player = {
+            return res.status(403).json({
 
-                id:
+                success: false,
 
-                    players.length > 0
+                message:
+                    "Joueur non inscrit au concours."
 
-                        ? Math.max(
-                            ...players.map(
-                                p => p.id
-                            )
-                        ) + 1
-
-                        : 1,
-
-                name:
-                    cleanName,
-
-                score:
-                    0,
-
-                games:
-                    0,
-
-                registered:
-                    false,
-
-                registrationPaid:
-                    0,
-
-                winnings:
-                    0
-
-            };
-
-
-            players.push(player);
+            });
 
         }
 
 
-        /* Vérifier inscription */
+        /* =========================
+           VÉRIFIER INSCRIPTION
+        ========================= */
 
         if (!player.registered) {
 
@@ -601,12 +645,21 @@ app.post("/api/players", (req, res) => {
         }
 
 
-        /* Ajouter le score */
+        /* =========================
+           AJOUTER LE SCORE
+        ========================= */
 
-        player.score += score;
+        player.score +=
+            score;
 
-        player.games += 1;
 
+        player.games +=
+            1;
+
+
+        /* =========================
+           METTRE À JOUR LE GAGNANT
+        ========================= */
 
         updateWinner();
 
@@ -618,13 +671,15 @@ app.post("/api/players", (req, res) => {
         console.log(
 
             `🏆 ${player.name}` +
-
             ` +${score} points` +
-
             ` → ${player.score} points`
 
         );
 
+
+        /* =========================
+           RÉPONSE
+        ========================= */
 
         res.json({
 
@@ -647,13 +702,15 @@ app.post("/api/players", (req, res) => {
                 games:
                     player.games,
 
+                registered:
+                    player.registered,
+
                 winnings:
                     player.winnings || 0
 
             },
 
             ranking:
-
                 ranking,
 
             contest: {
@@ -895,7 +952,6 @@ app.get(
         try {
 
             const name =
-
                 decodeURIComponent(
                     req.params.name
                 )
@@ -935,7 +991,6 @@ app.get(
 
 
             const position =
-
                 ranking.findIndex(
 
                     p =>
