@@ -1,181 +1,253 @@
 const express = require("express");
 const cors = require("cors");
+const { Pool } = require("pg");
 
 const app = express();
-
 const PORT = process.env.PORT || 3000;
+
+/* =====================================================
+   CONFIGURATION
+===================================================== */
 
 const REGISTRATION_FEE = 50;
 const WINNER_PERCENTAGE = 0.70;
 const PLATFORM_PERCENTAGE = 0.30;
 
-/* =====================================================
-   MIDDLEWARE
-===================================================== */
-
-app.use(
-    cors({
-        origin: "*",
-        methods: ["GET", "POST", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type"]
-    })
-);
+app.use(cors({
+    origin: "*",
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type"]
+}));
 
 app.use(express.json());
 
-/* =====================================================
-   DONNÉES DU CONCOURS
-===================================================== */
-
-let players = [];
-
-let contest = {
-    registrations: 0,
-    prizePool: 0,
-    winner: null,
-    winnerPrize: 0,
-    platformShare: 0,
-    status: "open"
-};
 
 /* =====================================================
-   OUTILS
+   POSTGRESQL
 ===================================================== */
 
-function findPlayer(name) {
-    return players.find(
-        player =>
-            player.name.toLowerCase() ===
-            name.trim().toLowerCase()
-    );
+if (!process.env.DATABASE_URL) {
+    console.error("❌ DATABASE_URL n'est pas configurée.");
+    process.exit(1);
 }
 
-function getRanking() {
-    return [...players]
-        .sort((a, b) => {
-            if (b.score !== a.score) {
-                return b.score - a.score;
-            }
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
 
-            return a.id - b.id;
-        })
-        .map((player, index) => ({
-            rank: index + 1,
-            ...player
-        }));
-}
 
-function updateWinner() {
+/* =====================================================
+   INITIALISATION DE LA BASE
+===================================================== */
 
-    const registeredPlayers =
-        getRanking().filter(
-            player => player.registered
+async function initDatabase() {
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS players (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL UNIQUE,
+            score INTEGER NOT NULL DEFAULT 0,
+            games INTEGER NOT NULL DEFAULT 0,
+            registered BOOLEAN NOT NULL DEFAULT FALSE,
+            registration_paid INTEGER NOT NULL DEFAULT 0,
+            winnings INTEGER NOT NULL DEFAULT 0
         );
+    `);
 
-    if (registeredPlayers.length === 0) {
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS contest (
+            id INTEGER PRIMARY KEY,
+            registrations INTEGER NOT NULL DEFAULT 0,
+            prize_pool INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'open'
+        );
+    `);
 
-        contest.winner = null;
-        contest.winnerPrize = 0;
-        contest.platformShare = 0;
+    await pool.query(`
+        INSERT INTO contest (
+            id,
+            registrations,
+            prize_pool,
+            status
+        )
+        VALUES (1, 0, 0, 'open')
+        ON CONFLICT (id) DO NOTHING;
+    `);
 
-        players.forEach(player => {
-            player.winnings = 0;
-        });
+    console.log("✅ Base PostgreSQL prête.");
+}
 
-        return;
+
+/* =====================================================
+   CONCOURS
+===================================================== */
+
+async function getContest() {
+
+    const result = await pool.query(`
+        SELECT *
+        FROM contest
+        WHERE id = 1
+    `);
+
+    return result.rows[0];
+}
+
+
+/* =====================================================
+   CLASSEMENT
+===================================================== */
+
+async function getRanking() {
+
+    const result = await pool.query(`
+        SELECT
+            id,
+            name,
+            score,
+            games,
+            registered,
+            winnings
+        FROM players
+        ORDER BY score DESC, id ASC
+    `);
+
+    return result.rows.map((player, index) => ({
+        rank: index + 1,
+        id: player.id,
+        name: player.name,
+        score: player.score,
+        games: player.games,
+        registered: player.registered,
+        winnings: player.winnings || 0
+    }));
+}
+
+
+/* =====================================================
+   GAGNANT
+===================================================== */
+
+async function updateWinner() {
+
+    const ranking = await getRanking();
+
+    await pool.query(`
+        UPDATE players
+        SET winnings = 0
+    `);
+
+    if (ranking.length === 0) {
+
+        return {
+            winner: null,
+            winnerPrize: 0,
+            platformShare: 0
+        };
     }
 
-    const winner = registeredPlayers[0];
+    const contest = await getContest();
 
-    const winnerPrize =
-        Math.floor(
-            contest.prizePool *
-            WINNER_PERCENTAGE
-        );
+    const winner = ranking[0];
+
+    const winnerPrize = Math.floor(
+        contest.prize_pool * WINNER_PERCENTAGE
+    );
 
     const platformShare =
-        contest.prizePool - winnerPrize;
+        contest.prize_pool - winnerPrize;
 
-    players.forEach(player => {
-        player.winnings = 0;
-    });
+    await pool.query(
+        `
+        UPDATE players
+        SET winnings = $1
+        WHERE id = $2
+        `,
+        [winnerPrize, winner.id]
+    );
 
-    winner.winnings = winnerPrize;
-
-    contest.winner = winner.name;
-    contest.winnerPrize = winnerPrize;
-    contest.platformShare = platformShare;
+    return {
+        winner: winner.name,
+        winnerPrize,
+        platformShare
+    };
 }
 
+
 /* =====================================================
-   ACCUEIL
+   TEST SERVEUR
 ===================================================== */
 
-app.get("/", (req, res) => {
+app.get("/", async (req, res) => {
 
-    res.json({
+    try {
 
-        success: true,
+        const contest = await getContest();
+        const ranking = await getRanking();
 
-        message:
-            "🏆 Serveur Konkou fonctionne !",
+        res.json({
+            success: true,
+            message: "🏆 Serveur Konkou fonctionne !",
+            players: ranking.length,
+            registrations: contest.registrations,
+            prizePool: contest.prize_pool,
+            winnerPercentage: "70%",
+            status: contest.status
+        });
 
-        players:
-            players.length,
+    } catch (error) {
 
-        registrations:
-            contest.registrations,
+        console.error("❌ Erreur :", error);
 
-        prizePool:
-            contest.prizePool,
-
-        winnerPercentage:
-            "70%",
-
-        status:
-            contest.status
-
-    });
-
+        res.status(500).json({
+            success: false,
+            message: "Erreur serveur."
+        });
+    }
 });
+
 
 /* =====================================================
    API
 ===================================================== */
 
-app.get("/api", (req, res) => {
+app.get("/api", async (req, res) => {
 
-    res.json({
+    try {
 
-        success: true,
+        const contest = await getContest();
+        const ranking = await getRanking();
 
-        message:
-            "🏆 Serveur Konkou fonctionne !",
+        res.json({
+            success: true,
+            message: "🏆 Serveur Konkou fonctionne !",
+            players: ranking.length,
+            registrations: contest.registrations,
+            prizePool: contest.prize_pool,
+            winnerPercentage: "70%",
+            status: contest.status
+        });
 
-        players:
-            players.length,
+    } catch (error) {
 
-        registrations:
-            contest.registrations,
+        console.error("❌ Erreur /api :", error);
 
-        prizePool:
-            contest.prizePool,
-
-        winnerPercentage:
-            "70%",
-
-        status:
-            contest.status
-
-    });
-
+        res.status(500).json({
+            success: false,
+            message: "Erreur serveur."
+        });
+    }
 });
 
+
 /* =====================================================
-   INSCRIPTION AU CONCOURS
+   INSCRIPTION
 ===================================================== */
 
-app.post("/api/register", (req, res) => {
+app.post("/api/register", async (req, res) => {
 
     try {
 
@@ -188,212 +260,165 @@ app.post("/api/register", (req, res) => {
         ) {
 
             return res.status(400).json({
-
                 success: false,
-
-                message:
-                    "Le nom est obligatoire."
-
+                message: "Le nom est obligatoire."
             });
-
         }
 
         const cleanName = name.trim();
 
-        let player = findPlayer(cleanName);
+        const existing = await pool.query(
+            `
+            SELECT *
+            FROM players
+            WHERE LOWER(name) = LOWER($1)
+            `,
+            [cleanName]
+        );
 
-        /* JOUEUR DÉJÀ INSCRIT */
+        if (existing.rows.length > 0) {
 
-        if (
-            player &&
-            player.registered
-        ) {
+            const player = existing.rows[0];
+
+            if (player.registered) {
+
+                const contest = await getContest();
+                const winner = await updateWinner();
+
+                return res.json({
+                    success: true,
+                    message: "Joueur déjà inscrit.",
+                    alreadyRegistered: true,
+
+                    player: {
+                        id: player.id,
+                        name: player.name,
+                        registered: true
+                    },
+
+                    contest: {
+                        registrations: contest.registrations,
+                        prizePool: contest.prize_pool,
+                        winnerPrize: winner.winnerPrize
+                    }
+                });
+            }
+
+            const updated = await pool.query(
+                `
+                UPDATE players
+                SET
+                    registered = TRUE,
+                    registration_paid = $1
+                WHERE id = $2
+                RETURNING *
+                `,
+                [REGISTRATION_FEE, player.id]
+            );
+
+            const updatedPlayer = updated.rows[0];
+
+            await pool.query(`
+                UPDATE contest
+                SET
+                    registrations = registrations + 1,
+                    prize_pool = prize_pool + $1
+                WHERE id = 1
+            `, [REGISTRATION_FEE]);
+
+            const contest = await getContest();
+            const winner = await updateWinner();
 
             return res.json({
-
                 success: true,
-
-                message:
-                    "Joueur déjà inscrit.",
-
-                alreadyRegistered:
-                    true,
+                message: "Inscription enregistrée.",
 
                 player: {
-
-                    id:
-                        player.id,
-
-                    name:
-                        player.name,
-
-                    score:
-                        player.score,
-
-                    games:
-                        player.games,
-
-                    registered:
-                        true
-
+                    id: updatedPlayer.id,
+                    name: updatedPlayer.name,
+                    registered: true
                 },
 
                 contest: {
-
-                    registrations:
-                        contest.registrations,
-
-                    registrationFee:
-                        REGISTRATION_FEE,
-
-                    prizePool:
-                        contest.prizePool,
-
-                    winner:
-                        contest.winner,
-
-                    winnerPrize:
-                        contest.winnerPrize,
-
-                    platformShare:
-                        contest.platformShare
-
+                    registrations: contest.registrations,
+                    registrationFee: REGISTRATION_FEE,
+                    prizePool: contest.prize_pool,
+                    winner: winner.winner,
+                    winnerPrize: winner.winnerPrize
                 }
-
             });
-
         }
 
-        /* CRÉER LE JOUEUR */
 
-        if (!player) {
+        const result = await pool.query(
+            `
+            INSERT INTO players (
+                name,
+                score,
+                games,
+                registered,
+                registration_paid,
+                winnings
+            )
+            VALUES ($1, 0, 0, TRUE, $2, 0)
+            RETURNING *
+            `,
+            [cleanName, REGISTRATION_FEE]
+        );
 
-            player = {
+        const player = result.rows[0];
 
-                id:
-                    players.length + 1,
+        await pool.query(`
+            UPDATE contest
+            SET
+                registrations = registrations + 1,
+                prize_pool = prize_pool + $1
+            WHERE id = 1
+        `, [REGISTRATION_FEE]);
 
-                name:
-                    cleanName,
-
-                score:
-                    0,
-
-                games:
-                    0,
-
-                registered:
-                    true,
-
-                registrationPaid:
-                    REGISTRATION_FEE,
-
-                winnings:
-                    0
-
-            };
-
-            players.push(player);
-
-        } else {
-
-            player.registered = true;
-
-            player.registrationPaid =
-                REGISTRATION_FEE;
-
-        }
-
-        /* METTRE À JOUR LE CONCOURS */
-
-        contest.registrations++;
-
-        contest.prizePool +=
-            REGISTRATION_FEE;
-
-        updateWinner();
+        const contest = await getContest();
+        const winner = await updateWinner();
 
         console.log(
             `🎟️ ${player.name} inscrit → +${REGISTRATION_FEE} HTG`
         );
 
         res.json({
-
             success: true,
-
-            message:
-                "Inscription enregistrée.",
+            message: "Inscription enregistrée.",
 
             player: {
-
-                id:
-                    player.id,
-
-                name:
-                    player.name,
-
-                score:
-                    player.score,
-
-                games:
-                    player.games,
-
-                registered:
-                    true
-
+                id: player.id,
+                name: player.name,
+                registered: true
             },
 
             contest: {
-
-                registrations:
-                    contest.registrations,
-
-                registrationFee:
-                    REGISTRATION_FEE,
-
-                prizePool:
-                    contest.prizePool,
-
-                winner:
-                    contest.winner,
-
-                winnerPrize:
-                    contest.winnerPrize,
-
-                platformShare:
-                    contest.platformShare
-
+                registrations: contest.registrations,
+                registrationFee: REGISTRATION_FEE,
+                prizePool: contest.prize_pool,
+                winner: winner.winner,
+                winnerPrize: winner.winnerPrize
             }
-
         });
 
-    }
+    } catch (error) {
 
-    catch (error) {
-
-        console.error(
-            "❌ Erreur /api/register :",
-            error
-        );
+        console.error("❌ Erreur /api/register :", error);
 
         res.status(500).json({
-
             success: false,
-
-            message:
-                "Erreur interne du serveur."
-
+            message: "Erreur interne du serveur."
         });
-
     }
-
 });
+
 
 /* =====================================================
    AJOUTER UN SCORE
 ===================================================== */
 
-app.post("/api/players", (req, res) => {
+app.post("/api/players", async (req, res) => {
 
     try {
 
@@ -406,14 +431,9 @@ app.post("/api/players", (req, res) => {
         ) {
 
             return res.status(400).json({
-
                 success: false,
-
-                message:
-                    "Le nom est obligatoire."
-
+                message: "Le nom est obligatoire."
             });
-
         }
 
         if (
@@ -423,278 +443,255 @@ app.post("/api/players", (req, res) => {
         ) {
 
             return res.status(400).json({
-
                 success: false,
-
-                message:
-                    "Score invalide."
-
+                message: "Score invalide."
             });
-
         }
 
-        const player = findPlayer(name);
+        const cleanName = name.trim();
 
-        if (!player) {
+        const result = await pool.query(
+            `
+            SELECT *
+            FROM players
+            WHERE LOWER(name) = LOWER($1)
+            `,
+            [cleanName]
+        );
 
-            return res.status(403).json({
+        if (result.rows.length === 0) {
 
+            return res.status(404).json({
                 success: false,
-
-                message:
-                    "Joueur non inscrit au concours."
-
+                message: "Joueur non inscrit."
             });
-
         }
+
+        const player = result.rows[0];
 
         if (!player.registered) {
 
             return res.status(403).json({
-
                 success: false,
-
                 message:
                     "Le joueur doit être inscrit au concours."
-
             });
-
         }
 
-        player.score += score;
+        const updated = await pool.query(
+            `
+            UPDATE players
+            SET
+                score = score + $1,
+                games = games + 1
+            WHERE id = $2
+            RETURNING *
+            `,
+            [score, player.id]
+        );
 
-        player.games++;
+        const updatedPlayer = updated.rows[0];
 
-        updateWinner();
-
-        const ranking = getRanking();
+        const winner = await updateWinner();
+        const ranking = await getRanking();
+        const contest = await getContest();
 
         console.log(
-            `🏆 ${player.name} +${score} points → ${player.score} points`
+            `🏆 ${updatedPlayer.name} +${score} points → ${updatedPlayer.score} points`
         );
 
         res.json({
 
             success: true,
 
-            message:
-                "Score enregistré.",
+            message: "Score enregistré.",
 
             player: {
-
-                id:
-                    player.id,
-
-                name:
-                    player.name,
-
-                score:
-                    player.score,
-
-                games:
-                    player.games,
-
-                registered:
-                    player.registered,
-
-                winnings:
-                    player.winnings || 0
-
+                id: updatedPlayer.id,
+                name: updatedPlayer.name,
+                score: updatedPlayer.score,
+                games: updatedPlayer.games,
+                winnings: updatedPlayer.winnings || 0
             },
 
-            ranking:
-                ranking,
+            ranking,
 
             contest: {
-
-                registrations:
-                    contest.registrations,
-
-                prizePool:
-                    contest.prizePool,
-
-                winner:
-                    contest.winner,
-
-                winnerPrize:
-                    contest.winnerPrize,
-
-                platformShare:
-                    contest.platformShare
-
+                registrations: contest.registrations,
+                prizePool: contest.prize_pool,
+                winner: winner.winner,
+                winnerPrize: winner.winnerPrize,
+                platformShare: winner.platformShare
             }
-
         });
 
-    }
+    } catch (error) {
 
-    catch (error) {
-
-        console.error(
-            "❌ Erreur /api/players :",
-            error
-        );
+        console.error("❌ Erreur /api/players :", error);
 
         res.status(500).json({
-
             success: false,
-
-            message:
-                "Erreur interne du serveur."
-
+            message: "Erreur interne du serveur."
         });
-
     }
-
 });
+
 
 /* =====================================================
-   LISTE DES JOUEURS
+   TOUS LES JOUEURS
 ===================================================== */
 
-app.get("/api/players", (req, res) => {
+app.get("/api/players", async (req, res) => {
 
-    res.json({
+    try {
 
-        success: true,
+        const result = await pool.query(`
+            SELECT
+                id,
+                name,
+                score,
+                games,
+                registered,
+                winnings
+            FROM players
+            ORDER BY score DESC, id ASC
+        `);
 
-        players:
-            getRanking()
+        res.json({
+            success: true,
+            players: result.rows
+        });
 
-    });
+    } catch (error) {
 
+        console.error("❌ Erreur joueurs :", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Impossible de récupérer les joueurs."
+        });
+    }
 });
+
 
 /* =====================================================
    CLASSEMENT
 ===================================================== */
 
-app.get("/api/ranking", (req, res) => {
+app.get("/api/ranking", async (req, res) => {
 
-    updateWinner();
+    try {
 
-    res.json({
+        const winner = await updateWinner();
+        const ranking = await getRanking();
+        const contest = await getContest();
 
-        success: true,
+        res.json({
 
-        ranking:
-            getRanking(),
+            success: true,
 
-        contest: {
+            ranking,
 
-            registrations:
-                contest.registrations,
+            contest: {
+                registrations: contest.registrations,
+                registrationFee: REGISTRATION_FEE,
+                prizePool: contest.prize_pool,
+                winner: winner.winner,
+                winnerPrize: winner.winnerPrize,
+                winnerPercentage: WINNER_PERCENTAGE * 100,
+                platformShare: winner.platformShare,
+                platformPercentage: PLATFORM_PERCENTAGE * 100
+            }
+        });
 
-            registrationFee:
-                REGISTRATION_FEE,
+    } catch (error) {
 
-            prizePool:
-                contest.prizePool,
+        console.error("❌ Erreur classement :", error);
 
-            winner:
-                contest.winner,
-
-            winnerPrize:
-                contest.winnerPrize,
-
-            winnerPercentage:
-                WINNER_PERCENTAGE * 100,
-
-            platformShare:
-                contest.platformShare,
-
-            platformPercentage:
-                PLATFORM_PERCENTAGE * 100
-
-        }
-
-    });
-
+        res.status(500).json({
+            success: false,
+            message: "Impossible de récupérer le classement."
+        });
+    }
 });
+
 
 /* =====================================================
-   INFORMATIONS CONCOURS
+   CONCOURS
 ===================================================== */
 
-app.get("/api/contest", (req, res) => {
+app.get("/api/contest", async (req, res) => {
 
-    updateWinner();
+    try {
 
-    res.json({
+        const contest = await getContest();
+        const winner = await updateWinner();
 
-        success: true,
+        res.json({
 
-        contest: {
+            success: true,
 
-            status:
-                contest.status,
+            contest: {
+                status: contest.status,
+                registrations: contest.registrations,
+                registrationFee: REGISTRATION_FEE,
+                prizePool: contest.prize_pool,
+                winner: winner.winner,
+                winnerPercentage: WINNER_PERCENTAGE * 100,
+                winnerPrize: winner.winnerPrize,
+                platformPercentage: PLATFORM_PERCENTAGE * 100,
+                platformShare: winner.platformShare
+            }
+        });
 
-            registrations:
-                contest.registrations,
+    } catch (error) {
 
-            registrationFee:
-                REGISTRATION_FEE,
+        console.error("❌ Erreur concours :", error);
 
-            prizePool:
-                contest.prizePool,
-
-            winner:
-                contest.winner,
-
-            winnerPercentage:
-                WINNER_PERCENTAGE * 100,
-
-            winnerPrize:
-                contest.winnerPrize,
-
-            platformPercentage:
-                PLATFORM_PERCENTAGE * 100,
-
-            platformShare:
-                contest.platformShare
-
-        }
-
-    });
-
+        res.status(500).json({
+            success: false,
+            message: "Erreur interne."
+        });
+    }
 });
+
 
 /* =====================================================
    RECHERCHER UN JOUEUR
 ===================================================== */
 
-app.get(
-    "/api/players/:name",
-    (req, res) => {
+app.get("/api/players/:name", async (req, res) => {
 
-        const name =
-            decodeURIComponent(
-                req.params.name
-            ).trim();
+    try {
 
-        const player =
-            findPlayer(name);
+        const name = decodeURIComponent(
+            req.params.name
+        ).trim();
 
-        if (!player) {
+        const result = await pool.query(
+            `
+            SELECT *
+            FROM players
+            WHERE LOWER(name) = LOWER($1)
+            `,
+            [name]
+        );
+
+        if (result.rows.length === 0) {
 
             return res.status(404).json({
-
                 success: false,
-
-                message:
-                    "Joueur introuvable."
-
+                message: "Joueur introuvable."
             });
-
         }
 
-        const ranking =
-            getRanking();
+        const player = result.rows[0];
+
+        const ranking = await getRanking();
 
         const position =
             ranking.findIndex(
-                p =>
-                    p.id === player.id
+                p => p.id === player.id
             ) + 1;
 
         res.json({
@@ -702,228 +699,159 @@ app.get(
             success: true,
 
             player: {
-
-                id:
-                    player.id,
-
-                name:
-                    player.name,
-
-                score:
-                    player.score,
-
-                games:
-                    player.games,
-
-                rank:
-                    position,
-
-                registered:
-                    player.registered,
-
-                winnings:
-                    player.winnings || 0
-
+                id: player.id,
+                name: player.name,
+                score: player.score,
+                games: player.games,
+                rank: position,
+                registered: player.registered,
+                winnings: player.winnings || 0
             }
-
         });
 
-    }
+    } catch (error) {
 
-);
+        console.error("❌ Erreur recherche :", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Erreur interne."
+        });
+    }
+});
+
 
 /* =====================================================
-   SANTÉ DU SERVEUR
+   SANTÉ
 ===================================================== */
 
-app.get(
-    "/api/health",
-    (req, res) => {
+app.get("/api/health", async (req, res) => {
+
+    try {
+
+        await pool.query("SELECT 1");
+
+        const contest = await getContest();
+
+        const result = await pool.query(
+            "SELECT COUNT(*) FROM players"
+        );
 
         res.json({
 
             success: true,
 
-            status:
-                "online",
+            status: "online",
 
-            service:
-                "Konkou",
+            database: "connected",
+
+            service: "Konkou",
 
             players:
-                players.length,
+                Number(result.rows[0].count),
 
             registrations:
                 contest.registrations,
 
             prizePool:
-                contest.prizePool,
-
-            database:
-                "not used",
+                contest.prize_pool,
 
             time:
                 new Date().toISOString()
-
         });
 
-    }
+    } catch (error) {
 
-);
-
-/* =====================================================
-   RESET
-===================================================== */
-
-app.delete(
-    "/api/players",
-    (req, res) => {
-
-        players = [];
-
-        contest = {
-
-            registrations:
-                0,
-
-            prizePool:
-                0,
-
-            winner:
-                null,
-
-            winnerPrize:
-                0,
-
-            platformShare:
-                0,
-
-            status:
-                "open"
-
-        };
-
-        res.json({
-
-            success: true,
-
-            message:
-                "Classement et concours réinitialisés."
-
-        });
-
-    }
-
-);
-
-/* =====================================================
-   404 API
-===================================================== */
-
-app.use(
-    "/api",
-    (req, res) => {
-
-        res.status(404).json({
-
-            success: false,
-
-            message:
-                "Route API introuvable."
-
-        });
-
-    }
-);
-
-/* =====================================================
-   GESTION DES ERREURS
-===================================================== */
-
-app.use(
-    (err, req, res, next) => {
-
-        console.error(
-            "❌ Erreur serveur :",
-            err
-        );
+        console.error("❌ PostgreSQL :", error);
 
         res.status(500).json({
 
             success: false,
 
+            status: "online",
+
+            database: "error",
+
             message:
-                "Erreur interne du serveur."
-
+                "Base de données inaccessible."
         });
-
     }
-);
+});
+
+
+/* =====================================================
+   404 API
+===================================================== */
+
+app.use("/api", (req, res) => {
+
+    res.status(404).json({
+
+        success: false,
+
+        message: "Route API introuvable."
+    });
+});
+
+
+/* =====================================================
+   ERREURS
+===================================================== */
+
+app.use((err, req, res, next) => {
+
+    console.error("❌ Erreur serveur :", err);
+
+    res.status(500).json({
+
+        success: false,
+
+        message: "Erreur interne du serveur."
+    });
+});
+
 
 /* =====================================================
    DÉMARRAGE
 ===================================================== */
 
-app.listen(
-    PORT,
-    "0.0.0.0",
-    () => {
+async function startServer() {
 
-        console.log(
-            "================================="
+    try {
+
+        await initDatabase();
+
+        app.listen(
+            PORT,
+            "0.0.0.0",
+            () => {
+
+                console.log("");
+                console.log("=================================");
+                console.log("🏆 KONKOU SERVER");
+                console.log("=================================");
+                console.log(`🚀 Port : ${PORT}`);
+                console.log("🌐 API : /api");
+                console.log("🎟️ Inscription : /api/register");
+                console.log("🏆 Classement : /api/ranking");
+                console.log("💰 Concours : /api/contest");
+                console.log("❤️ Santé : /api/health");
+                console.log("🗄️ PostgreSQL : connecté");
+                console.log("🥇 1er joueur : 70 % de la cagnotte");
+                console.log("=================================");
+                console.log("");
+            }
         );
 
-        console.log(
-            "🏆 KONKOU SERVER"
+    } catch (error) {
+
+        console.error(
+            "❌ Impossible de démarrer le serveur :",
+            error
         );
 
-        console.log(
-            "================================="
-        );
-
-        console.log(
-            `🚀 Port : ${PORT}`
-        );
-
-        console.log(
-            "🌐 API : /api"
-        );
-
-        console.log(
-            "🎟️ Inscription : /api/register"
-        );
-
-        console.log(
-            "👥 Joueurs : /api/players"
-        );
-
-        console.log(
-            "🏆 Classement : /api/ranking"
-        );
-
-        console.log(
-            "💰 Concours : /api/contest"
-        );
-
-        console.log(
-            "❤️ Santé : /api/health"
-        );
-
-        console.log(
-            "🥇 Gagnant : 70 %"
-        );
-
-        console.log(
-            "🏦 Plateforme : 30 %"
-        );
-
-        console.log(
-            "================================="
-        );
-
-        console.log(
-            "🚀 Serveur Konkou prêt !"
-        );
-
+        process.exit(1);
     }
-);
+}
+
+startServer();
